@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Atlas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="container">
+        <header class="page-header">
+            <div>
+                <h1>Painel do Aluno</h1>
+                <p id="user-welcome">Olá, João Silva</p>
+            </div>
+            <div id="status-geral" class="user-badge">Verificando sistema...</div>
+        </header>
+
+        <div class="grid-layout">
+            <article class="card nav-card" onclick="abrirModal('tutoria')">
+                <span class="icon">📖</span>
+                <h2>Tutoria</h2>
+                <p>Escolha seu professor orientador.</p>
+            </article>
+
+            <article class="card nav-card" onclick="abrirModal('eletivas')">
+                <span class="icon">💡</span>
+                <h2>Eletivas</h2>
+                <p>Selecione sua disciplina complementar.</p>
+            </article>
+
+            <article class="card nav-card" onclick="abrirModal('clubinhos')">
+                <span class="icon">🤝</span>
+                <h2>Clubinhos</h2>
+                <p>Crie ou participe de grupos de interesse.</p>
+            </article>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal-container" class="modal-overlay">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="modal-title">Título</h2>
+                <button class="close-btn" onclick="fecharModal()">&times;</button>
+            </header>
+            <div id="modal-body" class="modal-body">
+                <!-- Conteúdo Dinâmico -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
