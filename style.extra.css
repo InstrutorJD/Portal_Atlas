@@ -1,0 +1,64 @@
+/* Estilos extras aplicados sobre style.css para refinamento visual */
+
+/* Melhor legibilidade */
+body, input, button, select, textarea { font-size: 16px; line-height: 1.45; }
+
+.card { 
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), #ffffff);
+    padding: 26px; border-radius: 12px;
+    border: 1px solid #e6e9ef; transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(20,30,60,0.06);
+}
+.nav-card:hover { transform: translateY(-8px); border-color: #1766ff; box-shadow: 0 12px 36px rgba(16,38,120,0.08); }
+.icon { font-size: 3rem; margin-bottom: 12px; display: block; }
+
+.card h2 { margin: 0 0 8px; font-size: 1.15rem; color: #1f2933; }
+.card p { color: #6b7280; margin: 0; }
+
+.item-card { 
+    background: #ffffff; border: 1px solid #e6e9ef; padding: 18px;
+    border-radius: 10px; margin-bottom: 14px; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.item-card--selecionado { border-color: #1766ff; box-shadow: 0 8px 20px rgba(23,102,255,0.08); transform: translateY(-4px); }
+.item-card--desabilitado { opacity: 0.6; filter: grayscale(.02); }
+
+.vagas-info { color: #6b7280; font-size: 0.95rem; margin-bottom: 12px; }
+
+.alert--info { background: #eef6ff; color: #0f52d6; border: 1px solid rgba(23,102,255,0.12); }
+
+.btn-primary { background: linear-gradient(90deg, #1766ff, #7c5cff); color: white; box-shadow: 0 8px 22px rgba(23,102,255,0.12); }
+.btn-success { background: linear-gradient(90deg, #34c47a, #28a745); color: white; }
+.btn-outline { background: transparent; border: 1px solid #e6e9ef; color: #6b7280; }
+
+.btn-group { display:flex; gap:10px; }
+
+/* Badges */
+.user-badge { font-size: 0.9rem; padding: 8px 14px; border-radius: 999px; }
+.badge--sucesso { background: rgba(40,167,69,0.12); color: #28a745; border: 1px solid rgba(40,167,69,0.08); }
+.badge--fechado { background: rgba(255,193,7,0.08); color: #ffc107; border: 1px solid rgba(0,0,0,0.03); }
+
+.tag { background: rgba(0,0,0,0.06); color: #6b7280; padding: 4px 8px; border-radius: 8px; font-size: 0.85rem; margin-left:8px; }
+.badge-lider { background: rgba(124,92,255,0.12); color: #7c5cff; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; margin-left:8px; }
+
+.divider { border: none; height: 1px; background: #e6e9ef; margin: 16px 0; }
+
+/* Form layout helpers */
+.field-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; }
+.field--check { display:flex; gap:12px; align-items:center; }
+
+.vazio { color: #6b7280; }
+.secao-titulo { margin-top: 8px; margin-bottom: 12px; }
+
+.loading { text-align:center; padding:24px; color:#6b7280; }
+
+.lista-itens { display:flex; flex-direction:column; gap:8px; }
+
+/* Toast animation */
+.toast.show { display:block; animation: toast-in .28s ease forwards; }
+@keyframes toast-in { from { transform: translateY(10px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+
+/* pequenos ajustes responsivos */
+@media (max-width:420px){
+  .login-help ul li { display:block; margin-bottom:8px; }
+  .login-help button { margin-left:8px; margin-top:6px; }
+}

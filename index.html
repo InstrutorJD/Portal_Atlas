@@ -1,55 +1,90 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Atlas</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Atlas — Entrar</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.extra.css">
 </head>
-<body>
-    <main class="container">
-        <header class="page-header">
-            <div>
-                <h1>Painel do Aluno</h1>
-                <p id="user-welcome">Olá, João Silva</p>
-            </div>
-            <div id="status-geral" class="user-badge">Verificando sistema...</div>
-        </header>
+<body class="login-page">
 
-        <div class="grid-layout">
-            <article class="card nav-card" onclick="abrirModal('tutoria')">
-                <span class="icon">📖</span>
-                <h2>Tutoria</h2>
-                <p>Escolha seu professor orientador.</p>
-            </article>
-
-            <article class="card nav-card" onclick="abrirModal('eletivas')">
-                <span class="icon">💡</span>
-                <h2>Eletivas</h2>
-                <p>Selecione sua disciplina complementar.</p>
-            </article>
-
-            <article class="card nav-card" onclick="abrirModal('clubinhos')">
-                <span class="icon">🤝</span>
-                <h2>Clubinhos</h2>
-                <p>Crie ou participe de grupos de interesse.</p>
-            </article>
-        </div>
-    </main>
-
-    <!-- Modal -->
-    <div id="modal-container" class="modal-overlay">
-        <div class="modal-content">
-            <header class="modal-header">
-                <h2 id="modal-title">Título</h2>
-                <button class="close-btn" onclick="fecharModal()">&times;</button>
-            </header>
-            <div id="modal-body" class="modal-body">
-                <!-- Conteúdo Dinâmico -->
-            </div>
-        </div>
+  <div class="login-wrapper">
+    <div class="login-brand">
+      <span class="login-logo">◈</span>
+      <h1>Portal Atlas</h1>
+      <p>Acesse com seu e-mail institucional</p>
     </div>
 
-    <script src="script.js"></script>
+    <div class="login-card">
+      <div id="login-error" class="alert alert--erro" style="display:none"></div>
+
+      <div class="field">
+        <label for="email">E-mail institucional</label>
+        <input type="email" id="email" placeholder="seu.nome@escola.edu.br" autocomplete="username">
+      </div>
+
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" placeholder="primeironome + ano de nascimento" autocomplete="current-password">
+      </div>
+
+      <button class="btn btn-primary" id="btn-login" onclick="fazerLogin()">Entrar</button>
+    </div>
+
+      <div class="login-help" style="margin-top:14px; font-size:0.95rem; color:#444;">
+        <strong>Login rápido de teste:</strong>
+        <ul style="margin-top:8px; list-style: none; padding-left:0;">
+          <li>Aluno: <em>aluno@atlas.com</em> / <em>Teste@1234</em> <button class="btn btn-outline btn--sm" onclick="quickLogin('aluno@atlas.com','Teste@1234')">Entrar como aluno</button></li>
+          <li>Professor: <em>professor@atlas.com</em> / <em>Teste@1234</em> <button class="btn btn-outline btn--sm" onclick="quickLogin('professor@atlas.com','Teste@1234')">Entrar como professor</button></li>
+          <li>Coordenação: <em>coordenador@atlas.com</em> / <em>Teste@1234</em> <button class="btn btn-outline btn--sm" onclick="quickLogin('coordenador@atlas.com','Teste@1234')">Entrar como coord.</button></li>
+        </ul>
+      </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="supabase.js"></script>
+  <script>
+    // Se já tem sessão, redireciona
+    // Se já tem sessão, tenta redirecionar de forma segura
+getSessao().then(async (s) => { 
+  if (s) {
+    try {
+      const perfil = await getPerfil();
+      // Se a sessão existe mas o perfil retornou inválido, limpa a sessão travada
+      if (!perfil) {
+        console.warn("Sessão inválida encontrada, limpando...");
+        localStorage.removeItem('portal_atlas_sessao');
+        return;
+      }
+      await redirecionarPorPerfil(); 
+    } catch (e) {
+      console.error("Erro no redirecionamento automático:", e);
+      localStorage.removeItem('portal_atlas_sessao');
+    }
+  }
+});
+
+    async function fazerLogin() {
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+      try {
+        await login(email, senha);
+        await redirecionarPorPerfil();
+      } catch (e) {
+        console.error("Erro no login:", e);
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.textContent = e.message || "Erro desconhecido";
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    function quickLogin(email, senha) {
+      document.getElementById('email').value = email;
+      document.getElementById('senha').value = senha;
+      fazerLogin();
+    }
+  </script>
 </body>
 </html>

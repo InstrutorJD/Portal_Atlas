@@ -1,12 +1,17 @@
 :root {
-    --bg: #f8f9fa;
+    --bg: #f6f7fb;
     --surface: #ffffff;
-    --primary: #0066ff;
+    --primary: #1766ff;
+    --primary-600: #0f52d6;
+    --accent: #7c5cff;
     --success: #28a745;
     --warning: #ffc107;
-    --text: #212529;
-    --border: #dee2e6;
+    --text: #1f2933;
+    --muted: #6b7280;
+    --border: #e6e9ef;
     --radius: 12px;
+    --shadow-sm: 0 6px 18px rgba(20,30,60,0.06);
+    --shadow-md: 0 12px 40px rgba(20,30,60,0.08);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -51,3 +56,44 @@ body { background-color: var(--bg); color: var(--text); padding: 20px; }
 .btn-outline { background: transparent; border: 1px solid var(--border); color: #666; }
 .btn:hover:not(:disabled) { opacity: 0.85; }
 .btn:disabled { background: #eee; color: #aaa; cursor: not-allowed; }
+
+/* Login page */
+.login-page { display: flex; min-height: 100vh; align-items: center; justify-content: center; padding: 40px; }
+.login-wrapper { background: var(--surface); border: 1px solid var(--border); padding: 32px; border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 8px 20px rgba(0,0,0,0.04); }
+.login-brand { text-align: center; margin-bottom: 18px; }
+.login-logo { font-size: 2.4rem; color: var(--primary); display: block; margin: 0 auto 8px; }
+.login-card .field { margin-bottom: 14px; }
+.field label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 0.95rem; }
+.field input { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: #fff; font-size: 1rem; }
+
+.alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; }
+.alert--erro { background: #ffecec; color: #a94442; border: 1px solid #f5c6cb; }
+
+/* Small buttons (override width:100% from .btn) */
+.btn.btn--sm { padding: 8px 12px; border-radius: 6px; width: auto; font-size: 0.9rem; }
+
+/* Header actions */
+.header-actions { display: flex; gap: 12px; align-items: center; }
+
+/* Grid variant with two columns minimum */
+.grid-layout--2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+/* Modal close button */
+.close-btn { background: transparent; border: none; font-size: 1.6rem; cursor: pointer; color: #666; padding: 6px 10px; }
+
+/* Toast notifications */
+.toast { position: fixed; right: 20px; bottom: 20px; background: rgba(0,0,0,0.85); color: white; padding: 10px 14px; border-radius: 8px; display: none; z-index: 1100; min-width: 180px; text-align: center; }
+
+/* Card status */
+.card-status { display: block; margin-top: 12px; font-size: 0.9rem; color: #666; }
+
+/* Accessibility focus */
+a:focus, button:focus, input:focus { outline: 3px solid rgba(0,102,255,0.12); outline-offset: 2px; }
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+    .container { padding: 0 16px; }
+    .login-wrapper { padding: 20px; }
+    .card { padding: 20px; }
+    .icon { font-size: 2.2rem; }
+}

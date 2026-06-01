@@ -1,0 +1,19 @@
+# Credenciais e configuração local
+config.js
+.env.local
+.env
+
+# Node modules
+node_modules/
+npm-debug.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
