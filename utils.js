@@ -5,14 +5,21 @@
 
 /**
  * Verifica se a data atual está dentro de um período (inicio e fim)
+ * ✅ CORRIGIDO: Agora compara datas em string ISO para evitar problemas de timezone
  * @param {string|Date} inicio - Data de início (ISO 8601 ou Date)
  * @param {string|Date} fim - Data de fim (ISO 8601 ou Date)
  * @returns {boolean} true se hoje está entre as datas
  */
 function periodoAtivo(inicio, fim) {
   if (!inicio || !fim) return false;
-  const hoje = new Date();
-  return new Date(inicio) <= hoje && hoje <= new Date(fim);
+  
+  // Converter para strings no formato YYYY-MM-DD para evitar timezone issues
+  const hojeStr = new Date().toISOString().split('T')[0];
+  const inicioStr = String(inicio).split('T')[0];
+  const fimStr = String(fim).split('T')[0];
+  
+  // Comparar como strings (YYYY-MM-DD) - mais seguro que objetos Date
+  return inicioStr <= hojeStr && hojeStr <= fimStr;
 }
 
 /**
@@ -40,16 +47,45 @@ function anoLetivo() {
 
 /**
  * Mostra um toast (notificação temporária)
+ * ✅ CORRIGIDO: Agora cria elemento dinamicamente se não existir
  * @param {string} mensagem - Texto a exibir
  * @param {string} tipo - 'sucesso' ou 'erro' (padrão: 'sucesso')
  */
 function mostrarToast(mensagem, tipo = 'sucesso') {
-  const toast = document.getElementById('toast');
-  if (!toast) return;
+  let toast = document.getElementById('toast');
+  
+  // Se elemento não existe, criar dinamicamente
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 4px;
+      z-index: 10000;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    `;
+    document.body.appendChild(toast);
+  }
   
   toast.textContent = mensagem;
   toast.className = `toast toast--${tipo}`;
   toast.style.display = 'block';
+  
+  // Cores do toast
+  if (tipo === 'sucesso') {
+    toast.style.backgroundColor = '#4CAF50';
+    toast.style.color = 'white';
+  } else if (tipo === 'erro') {
+    toast.style.backgroundColor = '#f44336';
+    toast.style.color = 'white';
+  } else {
+    toast.style.backgroundColor = '#2196F3';
+    toast.style.color = 'white';
+  }
   
   setTimeout(() => {
     toast.style.display = 'none';

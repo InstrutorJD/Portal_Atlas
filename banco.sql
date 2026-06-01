@@ -244,3 +244,48 @@ CREATE POLICY "cm_insert_aluno" ON clubinho_membros
   FOR INSERT WITH CHECK ((get_aluno_logado()).id = aluno_id);
 CREATE POLICY "cm_delete_aluno" ON clubinho_membros
   FOR DELETE USING ((get_aluno_logado()).id = aluno_id);
+
+-- =============================================
+-- TRIGGERS DE VALIDAÇÃO
+-- =============================================
+
+-- ✅ TRIGGER 1: Validar vagas de eletiva
+-- Impede inserção de matrícula se ultrapassar vagas
+CREATE OR REPLACE FUNCTION validar_vagas_eletiva()
+RETURNS TRIGGER AS $$
+DECLARE
+  vagas_eletiva INT;
+  vagas_default INT;
+  count_matriculas INT;
+BEGIN
+  -- Obter vagas da eletiva (ou usar default do config)
+  SELECT COALESCE(e.vagas, ec.vagas_por_eletiva) INTO vagas_eletiva
+  FROM eletivas e
+  LEFT JOIN eletiva_config ec ON ec.ano_letivo = e.ano_letivo
+  WHERE e.id = NEW.eletiva_id;
+  
+  -- Contar matriculas existentes (sem incluir a nova)
+  SELECT COUNT(*) INTO count_matriculas
+  FROM eletiva_matriculas
+  WHERE eletiva_id = NEW.eletiva_id AND ano_letivo = NEW.ano_letivo;
+  
+  -- Validar
+  IF vagas_eletiva IS NOT NULL AND count_matriculas >= vagas_eletiva THEN
+    RAISE EXCEPTION 'Eletiva lotada: % matriculas mas apenas % vagas',
+      count_matriculas + 1, vagas_eletiva;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Attach trigger
+DROP TRIGGER IF EXISTS tr_validar_vagas_eletiva ON eletiva_matriculas;
+CREATE TRIGGER tr_validar_vagas_eletiva
+  BEFORE INSERT ON eletiva_matriculas
+  FOR EACH ROW
+  EXECUTE FUNCTION validar_vagas_eletiva();
+
+-- =============================================
+-- END OF SCHEMA
+-- =========================================== 

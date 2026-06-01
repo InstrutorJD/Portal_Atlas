@@ -1,0 +1,19 @@
+{
+  "sistema": {
+    "executados": 0,
+    "passou": 0,
+    "falhou": 0,
+    "testes": []
+  },
+  "bd": {
+    "executados": 0,
+    "passou": 0,
+    "falhou": 0,
+    "testes": []
+  },
+  "total": {
+    "executados": 0,
+    "passou": 0,
+    "falhou": 0
+  }
+}

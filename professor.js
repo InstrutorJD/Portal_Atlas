@@ -1,50 +1,28 @@
 // =============================================
 // PORTAL ATLAS — professor.js
 // =============================================
-
-// Fallback para funções utilitárias (caso utils.js não carregue)
-if (typeof periodoAtivo === 'undefined') {
-  var periodoAtivo = (inicio, fim) => {
-    if (!inicio || !fim) return false;
-    const hoje = new Date();
-    return new Date(inicio) <= hoje && hoje <= new Date(fim);
-  };
-}
-if (typeof formatarData === 'undefined') {
-  var formatarData = (data) => {
-    if (!data) return '';
-    const d = new Date(data);
-    if (isNaN(d)) return '';
-    const dia = String(d.getDate()).padStart(2, '0');
-    const mes = String(d.getMonth() + 1).padStart(2, '0');
-    const ano = d.getFullYear();
-    return `${dia}/${mes}/${ano}`;
-  };
-}
-if (typeof mostrarToast === 'undefined') {
-  var mostrarToast = (mensagem, tipo = 'sucesso') => {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.textContent = mensagem;
-    toast.className = `toast toast--${tipo}`;
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 3000);
-  };
-}
+// Funções utilitárias carregadas de utils.js
+// Não há fallbacks duplicados aqui
 
 let PERFIL = null;
 let CONFIGS = null;
 let ANO = anoLetivo();
 
 async function init() {
-  const sessao = await getSessao();
-  if (!sessao) { window.location.href = 'index.html'; return; }
+  try {
+    const sessao = await getSessao();
+    if (!sessao) { window.location.href = 'index.html'; return; }
 
-  PERFIL = await getPerfil();
-  if (!PERFIL || PERFIL.tipo !== 'professor') { window.location.href = 'index.html'; return; }
+    PERFIL = await getPerfil();
+    if (!PERFIL || PERFIL.tipo !== 'professor') { window.location.href = 'index.html'; return; }
 
-  CONFIGS = await getConfigs(ANO);
-  document.getElementById('user-welcome').textContent = `Olá, ${PERFIL.nome.split(' ')[0]}`;
+    CONFIGS = await getConfigs(ANO);
+    document.getElementById('user-welcome').textContent = `Olá, ${PERFIL.nome.split(' ')[0]}`;
+  } catch (erro) {
+    console.error('❌ Erro ao inicializar professor:', erro);
+    mostrarToast('Erro ao carregar. Recarregando...', 'erro');
+    setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+  }
 }
 
 function abrirModal(tipo) {

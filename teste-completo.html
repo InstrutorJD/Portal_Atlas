@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Testes Completos - Portal Atlas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            overflow-x: auto;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            color: #666;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-btn:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+        
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e9ecef;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .console {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            height: 600px;
+            overflow-y: auto;
+            border-radius: 6px;
+            margin: 20px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .console-line {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        
+        .success { color: #4caf50; }
+        .error { color: #ff6b6b; }
+        .warning { color: #ffb300; }
+        .info { color: #2196f3; }
+        .conexao { color: #00d4ff; }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-card.success .value { color: #4caf50; }
+        .stat-card.error .value { color: #ff6b6b; }
+        .stat-card.warning .value { color: #ffb300; }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .section {
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #667eea;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 20px;
+            border-radius: 4px;
+            color: #1976d2;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin: 5px;
+        }
+        
+        .badge-critica {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .badge-alta {
+            background: #ffb300;
+            color: white;
+        }
+        
+        .badge-media {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .badge-baixa {
+            background: #4caf50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Testes Completos - Portal Atlas</h1>
+            <p>Sistema de Lógica + Banco de Dados</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="abrirAba('sistema')">
+                🔧 Sistema Lógico
+            </button>
+            <button class="tab-btn" onclick="abrirAba('banco')">
+                🗄️ Banco de Dados
+            </button>
+            <button class="tab-btn" onclick="abrirAba('resumo')">
+                📊 Resumo Geral
+            </button>
+        </div>
+        
+        <!-- ABA: SISTEMA LÓGICO -->
+        <div id="sistema" class="tab-content active">
+            <div class="controls">
+                <button class="btn-primary" onclick="executarTestes_Sistema()">
+                    ▶️ Executar Testes de Lógica
+                </button>
+                <button class="btn-secondary" onclick="limparConsole_Sistema()">
+                    🗑️ Limpar Console
+                </button>
+                <button class="btn-secondary" onclick="exportarResultados_Sistema()">
+                    📥 Exportar
+                </button>
+            </div>
+            
+            <div class="info-box">
+                ℹ️ Testes de <strong>lógica do sistema</strong>: timezone, vagas, validações, etc.
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card success">
+                    <h3>✅ Passou</h3>
+                    <div class="value" id="stat-sistema-passed">0</div>
+                </div>
+                <div class="stat-card error">
+                    <h3>❌ Falhou</h3>
+                    <div class="value" id="stat-sistema-failed">0</div>
+                </div>
+                <div class="stat-card warning">
+                    <h3>📋 Total</h3>
+                    <div class="value" id="stat-sistema-total">0</div>
+                </div>
+                <div class="stat-card info">
+                    <h3>📈 Taxa</h3>
+                    <div class="value" id="stat-sistema-rate">0%</div>
+                </div>
+            </div>
+            
+            <div style="padding: 20px;">
+                <h2>📊 Console de Testes</h2>
+                <div class="console" id="console-sistema"></div>
+            </div>
+        </div>
+        
+        <!-- ABA: BANCO DE DADOS -->
+        <div id="banco" class="tab-content">
+            <div class="controls">
+                <button class="btn-success" onclick="executarTestes_BD()">
+                    ▶️ Executar Testes de BD
+                </button>
+                <button class="btn-secondary" onclick="limparConsole_BD()">
+                    🗑️ Limpar Console
+                </button>
+                <button class="btn-secondary" onclick="exportarResultados_BD()">
+                    📥 Exportar
+                </button>
+            </div>
+            
+            <div class="info-box">
+                🔗 Testes de <strong>conexão com Supabase</strong>: requisições, tratamento de erros, segurança, performance, etc.
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card success">
+                    <h3>✅ Passou</h3>
+                    <div class="value" id="stat-bd-passed">0</div>
+                </div>
+                <div class="stat-card error">
+                    <h3>❌ Falhou</h3>
+                    <div class="value" id="stat-bd-failed">0</div>
+                </div>
+                <div class="stat-card warning">
+                    <h3>📋 Total</h3>
+                    <div class="value" id="stat-bd-total">0</div>
+                </div>
+                <div class="stat-card info">
+                    <h3>📈 Taxa</h3>
+                    <div class="value" id="stat-bd-rate">0%</div>
+                </div>
+            </div>
+            
+            <div style="padding: 20px;">
+                <h2>📊 Console de Testes</h2>
+                <div class="console" id="console-bd"></div>
+            </div>
+        </div>
+        
+        <!-- ABA: RESUMO GERAL -->
+        <div id="resumo" class="tab-content">
+            <div class="controls">
+                <button class="btn-primary" onclick="executarTodosTestes_Completo()">
+                    ▶️ Executar Tudo (Sistema + BD)
+                </button>
+                <button class="btn-secondary" onclick="limparConsole_Completo()">
+                    🗑️ Limpar Tudo
+                </button>
+                <button class="btn-secondary" onclick="exportarResultados_Completo()">
+                    📥 Exportar Relatório Completo
+                </button>
+            </div>
+            
+            <div style="padding: 20px;">
+                <h2>📈 Estatísticas Gerais</h2>
+                
+                <div class="stats">
+                    <div class="stat-card success">
+                        <h3>✅ Total Passou</h3>
+                        <div class="value" id="stat-geral-passed">0</div>
+                    </div>
+                    <div class="stat-card error">
+                        <h3>❌ Total Falhou</h3>
+                        <div class="value" id="stat-geral-failed">0</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <h3>📋 Testes Executados</h3>
+                        <div class="value" id="stat-geral-total">0</div>
+                    </div>
+                    <div class="stat-card info">
+                        <h3>📈 Taxa Geral</h3>
+                        <div class="value" id="stat-geral-rate">0%</div>
+                    </div>
+                </div>
+                
+                <h2 style="margin-top: 40px; margin-left: 20px;">📊 Resumo por Categoria</h2>
+                
+                <div style="padding: 20px;">
+                    <h3>🔧 Testes de Sistema Lógico</h3>
+                    <p style="color: #666; margin: 10px 0;">10 testes de lógica: timezone, vagas, autenticação, etc.</p>
+                    <div id="resumo-sistema" style="margin: 10px 0;">
+                        <span class="badge badge-media">Aguardando execução...</span>
+                    </div>
+                </div>
+                
+                <div style="padding: 20px; border-top: 1px solid #e9ecef;">
+                    <h3>🗄️ Testes de Banco de Dados</h3>
+                    <p style="color: #666; margin: 10px 0;">12 testes de BD: conexão, requisições, segurança, performance, etc.</p>
+                    <div id="resumo-bd" style="margin: 10px 0;">
+                        <span class="badge badge-media">Aguardando execução...</span>
+                    </div>
+                </div>
+                
+                <div style="padding: 20px; border-top: 1px solid #e9ecef;">
+                    <h3>🎯 Recomendações</h3>
+                    <div id="recomendacoes" style="margin: 10px 0; color: #666;">
+                        <p>Execute todos os testes para receber recomendações personalizadas...</p>
+                    </div>
+                </div>
+                
+                <div class="console" id="console-geral" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+        // Gerenciador de abas
+        function abrirAba(nomeAba) {
+            // Esconder todas as abas
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Mostrar aba selecionada
+            document.getElementById(nomeAba).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // Referências aos consoles
+        const consoleSistema = document.getElementById('console-sistema');
+        const consoleBD = document.getElementById('console-bd');
+        const consoleGeral = document.getElementById('console-geral');
+        
+        // Sobrescrever console.log para múltiplos consoles
+        const originalLog = console.log;
+        let consoleAtivo = 'sistema';
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const mensagem = args.join(' ');
+            
+            const consoles = [consoleSistema, consoleBD, consoleGeral];
+            consoles.forEach(el => {
+                if (el) addLinhaConsole(el, mensagem, 'info');
+            });
+        };
+        
+        console.warn = function(...args) {
+            originalLog.apply(console, args);
+            const mensagem = args.join(' ');
+            const consoles = [consoleSistema, consoleBD, consoleGeral];
+            consoles.forEach(el => {
+                if (el) addLinhaConsole(el, mensagem, 'warning');
+            });
+        };
+        
+        console.error = function(...args) {
+            originalLog.apply(console, args);
+            const mensagem = args.join(' ');
+            const consoles = [consoleSistema, consoleBD, consoleGeral];
+            consoles.forEach(el => {
+                if (el) addLinhaConsole(el, mensagem, 'error');
+            });
+        };
+        
+        function addLinhaConsole(console, text, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            line.textContent = text;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        // Funções de execução
+        function executarTestes_Sistema() {
+            if (typeof executarTodosTestes === 'function') {
+                consoleAtivo = 'sistema';
+                consoleSistema.innerHTML = '';
+                executarTodosTestes();
+                atualizarStats_Sistema();
+            } else {
+                alert('⚠️ Testes de sistema não carregados. Certifique-se de que teste-sistema.js foi incluído.');
+            }
+        }
+        
+        function executarTestes_BD() {
+            if (typeof executarTodosTestes_BD === 'function') {
+                consoleAtivo = 'bd';
+                consoleBD.innerHTML = '';
+                executarTodosTestes_BD();
+                atualizarStats_BD();
+            } else {
+                alert('⚠️ Testes de BD não carregados. Certifique-se de que teste-banco-dados.js foi incluído.');
+            }
+        }
+        
+        function executarTodosTestes_Completo() {
+            consoleGeral.innerHTML = '';
+            consoleSistema.innerHTML = '';
+            consoleBD.innerHTML = '';
+            
+            if (typeof executarTodosTestes === 'function') {
+                executarTodosTestes();
+            }
+            
+            if (typeof executarTodosTestes_BD === 'function') {
+                executarTodosTestes_BD();
+            }
+            
+            setTimeout(() => {
+                atualizarStats_Sistema();
+                atualizarStats_BD();
+                atualizarStats_Geral();
+                gerarRecomendacoes();
+            }, 1000);
+        }
+        
+        function limparConsole_Sistema() {
+            consoleSistema.innerHTML = '';
+            document.getElementById('stat-sistema-passed').textContent = '0';
+            document.getElementById('stat-sistema-failed').textContent = '0';
+            document.getElementById('stat-sistema-total').textContent = '0';
+            document.getElementById('stat-sistema-rate').textContent = '0%';
+        }
+        
+        function limparConsole_BD() {
+            consoleBD.innerHTML = '';
+            document.getElementById('stat-bd-passed').textContent = '0';
+            document.getElementById('stat-bd-failed').textContent = '0';
+            document.getElementById('stat-bd-total').textContent = '0';
+            document.getElementById('stat-bd-rate').textContent = '0%';
+        }
+        
+        function limparConsole_Completo() {
+            limparConsole_Sistema();
+            limparConsole_BD();
+            consoleGeral.innerHTML = '';
+            document.getElementById('stat-geral-passed').textContent = '0';
+            document.getElementById('stat-geral-failed').textContent = '0';
+            document.getElementById('stat-geral-total').textContent = '0';
+            document.getElementById('stat-geral-rate').textContent = '0%';
+        }
+        
+        function atualizarStats_Sistema() {
+            if (typeof TESTES !== 'undefined') {
+                document.getElementById('stat-sistema-passed').textContent = TESTES.passou;
+                document.getElementById('stat-sistema-failed').textContent = TESTES.falhou;
+                document.getElementById('stat-sistema-total').textContent = TESTES.executados;
+                
+                const rate = TESTES.executados > 0 
+                    ? ((TESTES.passou / TESTES.executados) * 100).toFixed(1)
+                    : 0;
+                document.getElementById('stat-sistema-rate').textContent = rate + '%';
+            }
+        }
+        
+        function atualizarStats_BD() {
+            if (typeof TESTES_BD !== 'undefined') {
+                document.getElementById('stat-bd-passed').textContent = TESTES_BD.passou;
+                document.getElementById('stat-bd-failed').textContent = TESTES_BD.falhou;
+                document.getElementById('stat-bd-total').textContent = TESTES_BD.executados;
+                
+                const rate = TESTES_BD.executados > 0 
+                    ? ((TESTES_BD.passou / TESTES_BD.executados) * 100).toFixed(1)
+                    : 0;
+                document.getElementById('stat-bd-rate').textContent = rate + '%';
+            }
+        }
+        
+        function atualizarStats_Geral() {
+            const sistemaPassou = parseInt(document.getElementById('stat-sistema-passed').textContent) || 0;
+            const sistemaFalhou = parseInt(document.getElementById('stat-sistema-failed').textContent) || 0;
+            const bdPassou = parseInt(document.getElementById('stat-bd-passed').textContent) || 0;
+            const bdFalhou = parseInt(document.getElementById('stat-bd-failed').textContent) || 0;
+            
+            const totalPassou = sistemaPassou + bdPassou;
+            const totalFalhou = sistemaFalhou + bdFalhou;
+            const totalExec = totalPassou + totalFalhou;
+            
+            document.getElementById('stat-geral-passed').textContent = totalPassou;
+            document.getElementById('stat-geral-failed').textContent = totalFalhou;
+            document.getElementById('stat-geral-total').textContent = totalExec;
+            
+            const rate = totalExec > 0 ? ((totalPassou / totalExec) * 100).toFixed(1) : 0;
+            document.getElementById('stat-geral-rate').textContent = rate + '%';
+        }
+        
+        function gerarRecomendacoes() {
+            const bdPassou = parseInt(document.getElementById('stat-bd-passed').textContent) || 0;
+            const bdFalhou = parseInt(document.getElementById('stat-bd-failed').textContent) || 0;
+            
+            let html = '';
+            
+            if (bdFalhou > 0) {
+                html += '<span class="badge badge-critica">⚠️ CRÍTICA: Falhas encontradas no BD</span><br>';
+                html += '<p>Revisar testes que falharam acima antes de fazer deploy.</p>';
+            } else if (bdPassou > 0) {
+                html += '<span class="badge badge-alta">✅ Conexão com BD validada</span><br>';
+                html += '<p>Todos os testes de banco de dados passaram!</p>';
+            }
+            
+            document.getElementById('recomendacoes').innerHTML = html || '<p>Execute todos os testes para gerar recomendações...</p>';
+        }
+        
+        function exportarResultados_Sistema() {
+            const resultado = `TESTES DE SISTEMA - Portal Atlas\n` +
+                `Data: ${new Date().toLocaleString('pt-BR')}\n\n` +
+                `ESTATÍSTICAS:\n` +
+                `- Passou: ${document.getElementById('stat-sistema-passed').textContent}\n` +
+                `- Falhou: ${document.getElementById('stat-sistema-failed').textContent}\n` +
+                `- Total: ${document.getElementById('stat-sistema-total').textContent}\n` +
+                `- Taxa: ${document.getElementById('stat-sistema-rate').textContent}\n\n` +
+                `CONSOLE:\n${consoleSistema.innerText}`;
+            
+            exportarArquivo(resultado, 'teste-sistema');
+        }
+        
+        function exportarResultados_BD() {
+            const resultado = `TESTES DE BANCO DE DADOS - Portal Atlas\n` +
+                `Data: ${new Date().toLocaleString('pt-BR')}\n\n` +
+                `ESTATÍSTICAS:\n` +
+                `- Passou: ${document.getElementById('stat-bd-passed').textContent}\n` +
+                `- Falhou: ${document.getElementById('stat-bd-failed').textContent}\n` +
+                `- Total: ${document.getElementById('stat-bd-total').textContent}\n` +
+                `- Taxa: ${document.getElementById('stat-bd-rate').textContent}\n\n` +
+                `CONSOLE:\n${consoleBD.innerText}`;
+            
+            exportarArquivo(resultado, 'teste-banco-dados');
+        }
+        
+        function exportarResultados_Completo() {
+            const resultado = `TESTES COMPLETOS - Portal Atlas\n` +
+                `Data: ${new Date().toLocaleString('pt-BR')}\n\n` +
+                `RESUMO GERAL:\n` +
+                `- Total Passou: ${document.getElementById('stat-geral-passed').textContent}\n` +
+                `- Total Falhou: ${document.getElementById('stat-geral-failed').textContent}\n` +
+                `- Total Executado: ${document.getElementById('stat-geral-total').textContent}\n` +
+                `- Taxa Geral: ${document.getElementById('stat-geral-rate').textContent}\n\n` +
+                `TESTES SISTEMA: ${document.getElementById('stat-sistema-rate').textContent}\n` +
+                `TESTES BD: ${document.getElementById('stat-bd-rate').textContent}\n\n` +
+                `CONSOLE:\n${consoleGeral.innerText}`;
+            
+            exportarArquivo(resultado, 'teste-completo');
+        }
+        
+        function exportarArquivo(conteudo, nome) {
+            const blob = new Blob([conteudo], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${nome}-${new Date().getTime()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Monitorar mudanças
+        const interval = setInterval(() => {
+            atualizarStats_Sistema();
+            atualizarStats_BD();
+        }, 500);
+        
+        // Limpar ao carregar
+        window.addEventListener('load', () => {
+            consoleSistema.innerHTML = '';
+            consoleBD.innerHTML = '';
+            consoleGeral.innerHTML = '';
+            consoleSistema.innerHTML += '<div class="console-line info">✅ Página carregada. Selecione uma aba e clique em "Executar Testes".</div>';
+        });
+    </script>
+    
+    <!-- Carregar scripts de testes -->
+    <script src="teste-sistema.js"></script>
+    <script src="teste-banco-dados.js"></script>
+</body>
+</html>

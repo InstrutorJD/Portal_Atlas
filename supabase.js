@@ -63,7 +63,8 @@ async function login(email, senha) {
       const sessao = { 
         user: { id: data.user.id, email: data.user.email }, 
         access_token: data.session?.access_token || '',
-        perfil 
+        perfil,
+        criada_em: Date.now()  // ✅ ADICIONADO: timestamp para validar expiração
       };
       
       localStorage.setItem('portal_atlas_sessao', JSON.stringify(sessao));
@@ -75,7 +76,11 @@ async function login(email, senha) {
   } else {
     // Modo mock
     console.log('🔑 Tentando login mock para:', email);
-    const sessao = { user: { email }, perfil: { nome: 'Usuário Teste', tipo: 'aluno' } };
+    const sessao = { 
+      user: { email }, 
+      perfil: { nome: 'Usuário Teste', tipo: 'aluno' },
+      criada_em: Date.now()  // ✅ ADICIONADO: timestamp para validar expiração
+    };
     localStorage.setItem('portal_atlas_sessao', JSON.stringify(sessao));
     return sessao;
   }
@@ -91,8 +96,22 @@ async function logout() {
 
 async function getSessao() {
   try {
-    return JSON.parse(localStorage.getItem('portal_atlas_sessao'));
+    const sessao = JSON.parse(localStorage.getItem('portal_atlas_sessao'));
+    if (!sessao) return null;
+    
+    // ✅ CORRIGIDO: Validar expiração da sessão (24 horas)
+    const agora = Date.now();
+    const TIMEOUT_SESSAO = 24 * 60 * 60 * 1000; // 24 horas em ms
+    
+    if (sessao.criada_em && agora - sessao.criada_em > TIMEOUT_SESSAO) {
+      console.warn('⏰ Sessão expirada');
+      localStorage.removeItem('portal_atlas_sessao');
+      return null;
+    }
+    
+    return sessao;
   } catch(e) {
+    console.error('Erro ao ler sessão:', e);
     return null;
   }
 }
