@@ -138,27 +138,31 @@ async function getSessao() {
 // Função auxiliar para buscar nas tabelas corretas do seu SQL
 async function buscarPerfilNoBanco(email) {
   // 1. Tenta buscar na tabela de alunos
-  const { data: aluno } = await supabaseClient
+  const { data: aluno, error: erroAluno } = await supabaseClient
     .from('alunos')
     .select('id, nome, email')
     .eq('email', email)
     .maybeSingle();
-    
+
+  if (erroAluno) console.warn('⚠️ Erro ao buscar em alunos:', erroAluno.message);
+
   if (aluno) {
     return { id: aluno.id, email: aluno.email, tipo: 'aluno', nome: aluno.nome };
   }
-  
+
   // 2. Se não achar, tenta buscar na tabela de colaboradores
-  const { data: colab } = await supabaseClient
+  const { data: colab, error: erroColab } = await supabaseClient
     .from('colaboradores')
     .select('id, nome, email, is_professor, is_coordenador, is_tutor')
     .eq('email', email)
     .maybeSingle();
-    
+
+  if (erroColab) console.warn('⚠️ Erro ao buscar em colaboradores:', erroColab.message);
+
   if (colab) {
-    return { 
-      id: colab.id, 
-      email: colab.email, 
+    return {
+      id: colab.id,
+      email: colab.email,
       tipo: colab.is_coordenador ? 'coordenador' : colab.is_professor ? 'professor' : 'colaborador',
       nome: colab.nome,
       is_professor: colab.is_professor,
@@ -166,7 +170,8 @@ async function buscarPerfilNoBanco(email) {
       is_tutor: colab.is_tutor
     };
   }
-  
+
+  console.error(`❌ Perfil não encontrado para email: ${email}. Verifique as tabelas alunos/colaboradores no Supabase.`);
   return null;
 }
 
@@ -212,7 +217,7 @@ async function getConfigs(ano) {
 async function getTutores() {
   try {
     if (SUPABASE_ENABLED) {
-      const { data } = await supabaseClient.from('usuarios').select('*').eq('tipo', 'professor').eq('is_tutor', true);
+      const { data } = await supabaseClient.from('colaboradores').select('*').eq('is_tutor', true);
       return data || [];
     }
     return [];
@@ -225,7 +230,7 @@ async function getTutores() {
 async function getVinculoTutoria(alunoId, ano) {
   try {
     if (SUPABASE_ENABLED) {
-      const { data } = await supabaseClient.from('tutoria_matriculas').select('*, usuarios(*)').eq('aluno_id', alunoId).eq('ano_letivo', ano).maybeSingle();
+      const { data } = await supabaseClient.from('tutoria_vinculos').select('*, colaboradores(*)').eq('aluno_id', alunoId).eq('ano_letivo', ano).maybeSingle();
       return data;
     }
     return null;
@@ -237,7 +242,7 @@ async function getVinculoTutoria(alunoId, ano) {
 
 async function contarAlunosPorTutor(tutorId, ano) {
   if (SUPABASE_ENABLED) {
-    const { count } = await supabaseClient.from('tutoria_matriculas').select('*', { count: 'exact', head: true }).eq('tutor_id', tutorId).eq('ano_letivo', ano);
+    const { count } = await supabaseClient.from('tutoria_vinculos').select('*', { count: 'exact', head: true }).eq('colaborador_id', tutorId).eq('ano_letivo', ano);
     return count || 0;
   }
   return 0;
@@ -245,17 +250,25 @@ async function contarAlunosPorTutor(tutorId, ano) {
 
 async function escolherTutor(alunoId, tutorId, ano) {
   if (SUPABASE_ENABLED) {
-    const { data, error } = await supabaseClient.from('tutoria_matriculas').insert([{ aluno_id: alunoId, tutor_id: tutorId, ano_letivo: ano }]);
-    if (error) throw error;
-    return data;
+    const { data: existente } = await supabaseClient.from('tutoria_vinculos').select('id').eq('aluno_id', alunoId).eq('ano_letivo', ano).maybeSingle();
+    if (existente) {
+      const { error } = await supabaseClient.from('tutoria_vinculos').update({ colaborador_id: tutorId }).eq('id', existente.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient.from('tutoria_vinculos').insert([{ aluno_id: alunoId, colaborador_id: tutorId, ano_letivo: ano }]);
+      if (error) throw error;
+    }
+    return true;
   }
   return true;
 }
 
-async function getEletivas(ano) {
+async function getEletivas(ano, soAprovadas = false) {
   try {
     if (SUPABASE_ENABLED) {
-      const { data } = await supabaseClient.from('eletivas').select('*, usuarios(*)').eq('ano_letivo', ano);
+      let query = supabaseClient.from('eletivas').select('*, colaboradores(*)').eq('ano_letivo', ano);
+      if (soAprovadas) query = query.eq('status', 'aprovada');
+      const { data } = await query;
       return data || [];
     }
     return [];
@@ -295,10 +308,12 @@ async function matricularEletiva(alunoId, eletivaId, ano) {
   return true;
 }
 
-async function getClubbinhos(ano) {
+async function getClubbinhos(ano, soAprovados = false) {
   try {
     if (SUPABASE_ENABLED) {
-      const { data } = await supabaseClient.from('clubinhos').select('*, usuarios(*)').eq('ano_letivo', ano);
+      let query = supabaseClient.from('clubinhos').select('*').eq('ano_letivo', ano);
+      if (soAprovados) query = query.eq('status', 'aprovado');
+      const { data } = await query;
       return data || [];
     }
     return [];
@@ -329,9 +344,15 @@ async function contarMembrosPorClubinho(clubinhoId) {
   return 0;
 }
 
-async function criarClubinho(titulo, descricao, liderId, ano) {
+async function criarClubinho(liderId, nome, descricao, ano, config) {
   if (SUPABASE_ENABLED) {
-    const { data, error } = await supabaseClient.from('clubinhos').insert([{ titulo, descricao, lider_id: liderId, ano_letivo: ano, status: 'pendente' }]).select().single();
+    let validadeAte = null;
+    if (config?.duracao_meses) {
+      const d = new Date();
+      d.setMonth(d.getMonth() + config.duracao_meses);
+      validadeAte = d.toISOString().split('T')[0];
+    }
+    const { data, error } = await supabaseClient.from('clubinhos').insert([{ nome, descricao, lider_id: liderId, ano_letivo: ano, status: 'pendente', validade_ate: validadeAte }]).select().single();
     if (error) throw error;
     await supabaseClient.from('clubinho_membros').insert([{ clubinho_id: data.id, aluno_id: liderId, ano_letivo: ano }]);
     return data;
@@ -350,15 +371,40 @@ async function entrarClubinho(alunoId, clubinhoId, ano) {
 
 async function getTodosColaboradores() {
   if (SUPABASE_ENABLED) {
-    const { data } = await supabaseClient.from('usuarios').select('*').in('tipo', ['professor', 'coordenador']);
+    const { data } = await supabaseClient.from('colaboradores').select('*');
     return data || [];
   }
   return [];
 }
 
-async function criarColaborador(nome, email, tipo) {
+async function criarColaborador(nome, cargo, email, isTutor, isProfessor, isCoordenador) {
   if (SUPABASE_ENABLED) {
-    const { data, error } = await supabaseClient.from('usuarios').insert([{ nome, email, tipo, is_tutor: tipo === 'professor' }]);
+    const { data, error } = await supabaseClient.from('colaboradores').insert([{
+      nome,
+      cargo,
+      email: email || null,
+      is_tutor: isTutor,
+      is_professor: isProfessor,
+      is_coordenador: isCoordenador
+    }]);
+    if (error) throw error;
+    return data;
+  }
+  return true;
+}
+
+async function atualizarStatusEletiva(id, status) {
+  if (SUPABASE_ENABLED) {
+    const { data, error } = await supabaseClient.from('eletivas').update({ status }).eq('id', id);
+    if (error) throw error;
+    return data;
+  }
+  return true;
+}
+
+async function atualizarStatusClubinho(id, status) {
+  if (SUPABASE_ENABLED) {
+    const { data, error } = await supabaseClient.from('clubinhos').update({ status }).eq('id', id);
     if (error) throw error;
     return data;
   }
@@ -458,6 +504,8 @@ window.criarClubinho = criarClubinho;
 window.entrarClubinho = entrarClubinho;
 window.getTodosColaboradores = getTodosColaboradores;
 window.criarColaborador = criarColaborador;
+window.atualizarStatusEletiva = atualizarStatusEletiva;
+window.atualizarStatusClubinho = atualizarStatusClubinho;
 window.submitEletiva = submitEletiva;
 window.salvarConfig = salvarConfig;
 window.SUPABASE_ENABLED = SUPABASE_ENABLED;
