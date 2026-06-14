@@ -220,41 +220,105 @@ function renderPeriodos() {
   const e = CONFIGS.eletiva || {};
   const c = CONFIGS.clubinho || {};
 
+  const hoje = new Date();
+  const ano  = hoje.getFullYear();
+  const mes  = String(hoje.getMonth() + 1).padStart(2, '0');
+  const INI  = `${ano}-${mes}-01`;
+  const FIM  = `${ano}-${mes}-${new Date(ano, hoje.getMonth() + 1, 0).getDate()}`;
+
+  const range = (iniId, fimId, iniVal, fimVal) => `
+    <div class="cfg-periodo__range">
+      <div class="cfg-periodo__field">
+        <label>Início</label>
+        <input type="date" id="${iniId}" value="${iniVal || INI}">
+      </div>
+      <div class="cfg-periodo__sep">→</div>
+      <div class="cfg-periodo__field">
+        <label>Fim</label>
+        <input type="date" id="${fimId}" value="${fimVal || FIM}">
+      </div>
+    </div>`;
+
   body.innerHTML = `
-    <form onsubmit="return false;">
+    <div class="cfg-form">
 
-      <h3 class="secao-titulo">📖 Tutoria</h3>
-      <div class="field-grid">
-        <div class="field"><label>Vagas por tutor</label><input type="number" id="t-vagas" value="${t.vagas_por_tutor || 5}" min="1"></div>
-        <div class="field"><label>Início inscrições</label><input type="date" id="t-ins-ini" value="${t.data_inscricao_inicio || ''}"></div>
-        <div class="field"><label>Fim inscrições</label><input type="date" id="t-ins-fim" value="${t.data_inscricao_fim || ''}"></div>
+      <!-- TUTORIA -->
+      <div class="cfg-card cfg-card--blue">
+        <div class="cfg-card__header"><span>📖</span> Tutoria</div>
+        <div class="cfg-card__body">
+          <div class="cfg-vagas">
+            <div class="cfg-vagas__item">
+              <label>Vagas por tutor</label>
+              <input type="number" id="t-vagas" value="${t.vagas_por_tutor || 5}" min="1">
+            </div>
+          </div>
+          <div class="cfg-periodo">
+            <div class="cfg-periodo__tag">📅 Inscrições</div>
+            ${range('t-ins-ini', 't-ins-fim', t.data_inscricao_inicio, t.data_inscricao_fim)}
+          </div>
+        </div>
       </div>
 
-      <h3 class="secao-titulo">💡 Eletivas</h3>
-      <div class="field-grid">
-        <div class="field"><label>Vagas por eletiva</label><input type="number" id="e-vagas" value="${e.vagas_por_eletiva || 10}" min="1"></div>
-        <div class="field"><label>Início criação</label><input type="date" id="e-cri-ini" value="${e.data_criacao_inicio || ''}"></div>
-        <div class="field"><label>Fim criação</label><input type="date" id="e-cri-fim" value="${e.data_criacao_fim || ''}"></div>
-        <div class="field"><label>Início aprovação</label><input type="date" id="e-apr-ini" value="${e.data_aprovacao_inicio || ''}"></div>
-        <div class="field"><label>Fim aprovação</label><input type="date" id="e-apr-fim" value="${e.data_aprovacao_fim || ''}"></div>
-        <div class="field"><label>Início inscrições</label><input type="date" id="e-ins-ini" value="${e.data_inscricao_inicio || ''}"></div>
-        <div class="field"><label>Fim inscrições</label><input type="date" id="e-ins-fim" value="${e.data_inscricao_fim || ''}"></div>
+      <!-- ELETIVAS -->
+      <div class="cfg-card cfg-card--purple">
+        <div class="cfg-card__header"><span>💡</span> Eletivas</div>
+        <div class="cfg-card__body">
+          <div class="cfg-vagas">
+            <div class="cfg-vagas__item">
+              <label>Vagas por eletiva</label>
+              <input type="number" id="e-vagas" value="${e.vagas_por_eletiva || 10}" min="1">
+            </div>
+          </div>
+          <div class="cfg-periodo">
+            <div class="cfg-periodo__tag">✏️ Criação de propostas</div>
+            ${range('e-cri-ini', 'e-cri-fim', e.data_criacao_inicio, e.data_criacao_fim)}
+          </div>
+          <div class="cfg-periodo">
+            <div class="cfg-periodo__tag">✅ Aprovação</div>
+            ${range('e-apr-ini', 'e-apr-fim', e.data_aprovacao_inicio, e.data_aprovacao_fim)}
+          </div>
+          <div class="cfg-periodo">
+            <div class="cfg-periodo__tag">📅 Inscrições</div>
+            ${range('e-ins-ini', 'e-ins-fim', e.data_inscricao_inicio, e.data_inscricao_fim)}
+          </div>
+        </div>
       </div>
 
-      <h3 class="secao-titulo">🤝 Clubinhos</h3>
-      <div class="field-grid">
-        <div class="field"><label>Vagas por clubinho</label><input type="number" id="c-vagas" value="${c.vagas_por_clubinho || 10}" min="1"></div>
-        <div class="field"><label>Duração (meses)</label><input type="number" id="c-dur" value="${c.duracao_meses || 6}" min="1"></div>
-        <div class="field"><label>Início criação</label><input type="date" id="c-cri-ini" value="${c.data_criacao_inicio || ''}"></div>
-        <div class="field"><label>Fim criação</label><input type="date" id="c-cri-fim" value="${c.data_criacao_fim || ''}"></div>
-        <div class="field"><label>Início aprovação</label><input type="date" id="c-apr-ini" value="${c.data_aprovacao_inicio || ''}"></div>
-        <div class="field"><label>Fim aprovação</label><input type="date" id="c-apr-fim" value="${c.data_aprovacao_fim || ''}"></div>
-        <div class="field"><label>Início inscrições</label><input type="date" id="c-ins-ini" value="${c.data_inscricao_inicio || ''}"></div>
-        <div class="field"><label>Fim inscrições</label><input type="date" id="c-ins-fim" value="${c.data_inscricao_fim || ''}"></div>
+      <!-- CLUBINHOS -->
+      <div class="cfg-card cfg-card--green">
+        <div class="cfg-card__header"><span>🤝</span> Clubinhos</div>
+        <div class="cfg-card__body">
+          <div class="cfg-vagas">
+            <div class="cfg-vagas__item">
+              <label>Vagas por clubinho</label>
+              <input type="number" id="c-vagas" value="${c.vagas_por_clubinho || 10}" min="1">
+            </div>
+            <div class="cfg-vagas__item">
+              <label>Duração</label>
+              <input type="number" id="c-dur" value="${c.duracao_meses || 6}" min="1">
+              <span class="cfg-unit">meses</span>
+            </div>
+          </div>
+          <div class="cfg-periodo">
+            <div class="cfg-periodo__tag">✏️ Criação de clubinhos</div>
+            ${range('c-cri-ini', 'c-cri-fim', c.data_criacao_inicio, c.data_criacao_fim)}
+          </div>
+          <div class="cfg-periodo">
+            <div class="cfg-periodo__tag">✅ Aprovação</div>
+            ${range('c-apr-ini', 'c-apr-fim', c.data_aprovacao_inicio, c.data_aprovacao_fim)}
+          </div>
+          <div class="cfg-periodo">
+            <div class="cfg-periodo__tag">📅 Inscrições</div>
+            ${range('c-ins-ini', 'c-ins-fim', c.data_inscricao_inicio, c.data_inscricao_fim)}
+          </div>
+        </div>
       </div>
 
-      <button class="btn btn-primary" onclick="salvarPeriodos()">Salvar configurações</button>
-    </form>`;
+      <div class="cfg-save">
+        <button class="btn btn-primary" onclick="salvarPeriodos()">💾 Salvar configurações</button>
+      </div>
+
+    </div>`;
 }
 
 async function salvarPeriodos() {
@@ -267,7 +331,7 @@ async function salvarPeriodos() {
       salvarConfig('tutoria_config', {
         ano_letivo: ANO,
         vagas_por_tutor: parseInt(v('t-vagas')),
-        data_criacao_inicio: v('t-ins-ini'),
+        data_criacao_inicio: v('t-ins-ini'),   // tutoria não tem criação separada — usa mesmo período
         data_criacao_fim: v('t-ins-fim'),
         data_inscricao_inicio: v('t-ins-ini'),
         data_inscricao_fim: v('t-ins-fim'),
