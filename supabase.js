@@ -39,14 +39,35 @@ if (SUPABASE_URL && SUPABASE_KEY && typeof window.supabase !== 'undefined') {
 
 // =============== DADOS MOCK (fallback) ===============
 const _DB = {
-  usuarios: [],
+  usuarios: [
+    { id: '1', nome: 'Professor Teste', email: 'prof@example.com', tipo: 'professor', is_tutor: true },
+    { id: '2', nome: 'Coordenador Teste', email: 'coord@example.com', tipo: 'coordenador', is_coordenador: true },
+    { id: '3', nome: 'Aluno Teste', email: 'aluno@example.com', tipo: 'aluno' }
+  ],
+  colaboradores: [
+    { id: '1', nome: 'Professor Teste', email: 'prof@example.com', is_professor: true, is_tutor: true, is_coordenador: false },
+    { id: '2', nome: 'Coordenador Teste', email: 'coord@example.com', is_professor: false, is_tutor: false, is_coordenador: true }
+  ],
+  alunos: [
+    { id: '3', nome: 'Aluno Teste', email: 'aluno@example.com' }
+  ],
   configuracoes: [],
+  tutoria_config: { ano_letivo: 2026, max_alunos: 10 },
+  eletiva_config: { ano_letivo: 2026, max_vagas: 20 },
+  clubinho_config: { ano_letivo: 2026, ativo: true },
   tutores: [],
   tutoria_matriculas: [],
-  eletivas: [],
+  eletivas: [
+    { id: '1', titulo: 'Eletiva 1', descricao: 'Descrição', professor_id: '1', ano_letivo: 2026 },
+    { id: '2', titulo: 'Eletiva 2', descricao: 'Descrição', professor_id: '1', ano_letivo: 2026 }
+  ],
   eletiva_matriculas: [],
-  clubinhos: [],
-  clubinho_membros: []
+  clubinhos: [
+    { id: '1', titulo: 'Clube 1', descricao: 'Descrição', lider_id: '3', ano_letivo: 2026, status: 'ativo' }
+  ],
+  clubinho_membros: [
+    { id: '1', clubinho_id: '1', aluno_id: '3', ano_letivo: 2026 }
+  ]
 };
 
 // =============== AUTENTICAÇÃO CORRIGIDA ===============
@@ -70,12 +91,10 @@ async function login(email, senha) {
       localStorage.setItem('portal_atlas_sessao', JSON.stringify(sessao));
       return sessao;
     } catch (e) {
-      console.error('Erro de autenticação:', e.message);
       throw e;
     }
   } else {
     // Modo mock
-    console.log('🔑 Tentando login mock para:', email);
     const sessao = { 
       user: { email }, 
       perfil: { nome: 'Usuário Teste', tipo: 'aluno' },
@@ -152,15 +171,20 @@ async function buscarPerfilNoBanco(email) {
 }
 
 async function getPerfil() {
-  const sessao = await getSessao();
-  if (!sessao) return null;
-  if (sessao.perfil) return sessao.perfil;
-  
-  if (SUPABASE_ENABLED && sessao.user?.email) {
-    return await buscarPerfilNoBanco(sessao.user.email);
+  try {
+    const sessao = await getSessao();
+    if (!sessao) return null;
+    if (sessao.perfil) return sessao.perfil;
+    
+    if (SUPABASE_ENABLED && sessao.user?.email) {
+      return await buscarPerfilNoBanco(sessao.user.email);
+    }
+    
+    return { nome: 'Aluno Atlas', tipo: 'aluno', id: 'mock-aluno' };
+  } catch (e) {
+    console.error('Erro ao buscar perfil:', e.message);
+    return null;
   }
-  
-  return { nome: 'Aluno Atlas', tipo: 'aluno', id: 'mock-aluno' };
 }
 
 // =============== FUNÇÕES DE NEGÓCIO ===============
@@ -169,31 +193,46 @@ function anoLetivo() {
 }
 
 async function getConfigs(ano) {
-  if (SUPABASE_ENABLED) {
-    const t = supabaseClient.from('tutoria_config').select('*').eq('ano_letivo', ano).maybeSingle();
-    const e = supabaseClient.from('eletiva_config').select('*').eq('ano_letivo', ano).maybeSingle();
-    const c = supabaseClient.from('clubinho_config').select('*').eq('ano_letivo', ano).maybeSingle();
-    
-    const [tut, ele, club] = await Promise.all([t, e, c]);
-    return { tutoria: tut.data, eletiva: ele.data, clubinho: club.data };
+  try {
+    if (SUPABASE_ENABLED) {
+      const t = supabaseClient.from('tutoria_config').select('*').eq('ano_letivo', ano).maybeSingle();
+      const e = supabaseClient.from('eletiva_config').select('*').eq('ano_letivo', ano).maybeSingle();
+      const c = supabaseClient.from('clubinho_config').select('*').eq('ano_letivo', ano).maybeSingle();
+      
+      const [tut, ele, club] = await Promise.all([t, e, c]);
+      return { tutoria: tut.data, eletiva: ele.data, clubinho: club.data };
+    }
+    return { tutoria: null, eletiva: null, clubinho: null };
+  } catch (e) {
+    console.error('Erro ao buscar configurações:', e.message);
+    return { tutoria: null, eletiva: null, clubinho: null };
   }
-  return { tutoria: null, eletiva: null, clubinho: null };
 }
 
 async function getTutores() {
-  if (SUPABASE_ENABLED) {
-    const { data } = await supabaseClient.from('usuarios').select('*').eq('tipo', 'professor').eq('is_tutor', true);
-    return data || [];
+  try {
+    if (SUPABASE_ENABLED) {
+      const { data } = await supabaseClient.from('usuarios').select('*').eq('tipo', 'professor').eq('is_tutor', true);
+      return data || [];
+    }
+    return [];
+  } catch (e) {
+    console.error('Erro ao buscar tutores:', e.message);
+    return [];
   }
-  return [];
 }
 
 async function getVinculoTutoria(alunoId, ano) {
-  if (SUPABASE_ENABLED) {
-    const { data } = await supabaseClient.from('tutoria_matriculas').select('*, usuarios(*)').eq('aluno_id', alunoId).eq('ano_letivo', ano).maybeSingle();
-    return data;
+  try {
+    if (SUPABASE_ENABLED) {
+      const { data } = await supabaseClient.from('tutoria_matriculas').select('*, usuarios(*)').eq('aluno_id', alunoId).eq('ano_letivo', ano).maybeSingle();
+      return data;
+    }
+    return null;
+  } catch (e) {
+    console.error('Erro ao buscar vínculo de tutoria:', e.message);
+    return null;
   }
-  return null;
 }
 
 async function contarAlunosPorTutor(tutorId, ano) {
@@ -214,19 +253,29 @@ async function escolherTutor(alunoId, tutorId, ano) {
 }
 
 async function getEletivas(ano) {
-  if (SUPABASE_ENABLED) {
-    const { data } = await supabaseClient.from('eletivas').select('*, usuarios(*)').eq('ano_letivo', ano);
-    return data || [];
+  try {
+    if (SUPABASE_ENABLED) {
+      const { data } = await supabaseClient.from('eletivas').select('*, usuarios(*)').eq('ano_letivo', ano);
+      return data || [];
+    }
+    return [];
+  } catch (e) {
+    console.error('Erro ao buscar eletivas:', e.message);
+    return [];
   }
-  return [];
 }
 
 async function getMatriculaEletiva(alunoId, ano) {
-  if (SUPABASE_ENABLED) {
-    const { data } = await supabaseClient.from('eletiva_matriculas').select('*, eletivas(*)').eq('aluno_id', alunoId).eq('ano_letivo', ano).maybeSingle();
-    return data;
+  try {
+    if (SUPABASE_ENABLED) {
+      const { data } = await supabaseClient.from('eletiva_matriculas').select('*, eletivas(*)').eq('aluno_id', alunoId).eq('ano_letivo', ano).maybeSingle();
+      return data;
+    }
+    return null;
+  } catch (e) {
+    console.error('Erro ao buscar matrícula de eletiva:', e.message);
+    return null;
   }
-  return null;
 }
 
 async function contarMatriculasPorEletiva(eletivaId) {
@@ -247,19 +296,29 @@ async function matricularEletiva(alunoId, eletivaId, ano) {
 }
 
 async function getClubbinhos(ano) {
-  if (SUPABASE_ENABLED) {
-    const { data } = await supabaseClient.from('clubinhos').select('*, usuarios(*)').eq('ano_letivo', ano);
-    return data || [];
+  try {
+    if (SUPABASE_ENABLED) {
+      const { data } = await supabaseClient.from('clubinhos').select('*, usuarios(*)').eq('ano_letivo', ano);
+      return data || [];
+    }
+    return [];
+  } catch (e) {
+    console.error('Erro ao buscar clubinhos:', e.message);
+    return [];
   }
-  return [];
 }
 
 async function getMembroClubinho(alunoId, ano) {
-  if (SUPABASE_ENABLED) {
-    const { data } = await supabaseClient.from('clubinho_membros').select('*, clubinhos(*)').eq('aluno_id', alunoId).eq('ano_letivo', ano).maybeSingle();
-    return data;
+  try {
+    if (SUPABASE_ENABLED) {
+      const { data } = await supabaseClient.from('clubinho_membros').select('*, clubinhos(*)').eq('aluno_id', alunoId).eq('ano_letivo', ano).maybeSingle();
+      return data;
+    }
+    return null;
+  } catch (e) {
+    console.error('Erro ao buscar membro de clubinho:', e.message);
+    return null;
   }
-  return null;
 }
 
 async function contarMembrosPorClubinho(clubinhoId) {
@@ -402,6 +461,7 @@ window.criarColaborador = criarColaborador;
 window.submitEletiva = submitEletiva;
 window.salvarConfig = salvarConfig;
 window.SUPABASE_ENABLED = SUPABASE_ENABLED;
+window._DB = _DB;
 
 // =============== REDIRECIONAMENTO POR PERFIL (CORRIGIDO) ===============
 window.redirecionarPorPerfil = async function() {
