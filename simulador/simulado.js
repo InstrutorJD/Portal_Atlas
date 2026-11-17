@@ -91,6 +91,15 @@ async function initializeSimulator() {
 		return text.replace(/\s+/g, " ").trim();
 	}
 
+	function isExamMetadataLine(line) {
+		return /^\s*-{5,}\s*$/.test(line)
+			|| /^\s*(?:TEXTO\s+PARA\s+AS?\s+)?QUEST(?:Õ|O)ES\s+DE\b/i.test(line)
+			|| /^\s*(?:LINGUAGENS(?:,\s*C[ÓO]DIGOS)?|CI[ÊE]NCIAS\s+HUMANAS|CI[ÊE]NCIAS\s+DA\s+NATUREZA|MATEM[ÁA]TICA)(?:\s+E(?:\s+SUAS)?(?:\s+TECNOLOGIAS)?)?\s*$/i.test(line)
+			|| /^\s*(?:E\s+)?SUAS(?:\s+TECNOLOGIAS)?\.?\s*$/i.test(line)
+			|| /^\s*(?:OP[CÇ][AÃ]O\s+(?:INGLÊS|ESPANHOL)|DIA\s+\d+|PROVA\s+DIA\s+\d+\b.*)$/i.test(line)
+			|| /^\s*TECNOLOGIAS\s*$/i.test(line);
+	}
+
 	function areaFromHeading(text, offset, questionNumber) {
 		const beforeQuestion = text.slice(0, offset);
 		const areaPatterns = [
@@ -185,9 +194,12 @@ async function initializeSimulator() {
 			occurrences.set(number, occurrence + 1);
 			const start = header.index + header[0].length;
 			const end = headers[index + 1]?.index ?? text.length;
-			const lines = text.slice(start, end).split(/\r?\n/);
+			const rawLines = text.slice(start, end).split(/\r?\n/);
 			const imageNotice = /\b(?:tem|cont[ée]m|contendo)\s+(?:uma\s+)?imagem|\(\s*(?:in?magem|tem\s+imagem|imagem\s+nas\s+respostas)\b|\bimagem\s+nas\s+respostas\b/i;
-			if (imageNotice.test(header[0]) || imageNotice.test(lines.join("\n"))) return;
+			if (imageNotice.test(header[0]) || imageNotice.test(rawLines.join("\n"))) return;
+			const lines = rawLines
+				.filter((line) => !isExamMetadataLine(line))
+				.map((line) => line.replace(/-{5,}=?/g, ""));
 
 			const parsedChoices = parseChoices(lines);
 			const possibleAnswers = answerKey.get(number) || [];
