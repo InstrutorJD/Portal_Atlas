@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Atlas — Entrar</title>
+  <link rel="stylesheet" href="atlas.css">
+  <link rel="stylesheet" href="style.extra.css">
+</head>
+<body class="login-page">
+  <main class="login-wrapper">
+    <header class="login-brand">
+      <span class="login-logo" aria-hidden="true">◈</span>
+      <h1>Portal Atlas</h1>
+      <p>Acesse com seu e-mail institucional</p>
+    </header>
+
+    <form class="login-card" id="login-form">
+      <p id="login-error" class="alert alert--erro" role="alert" hidden></p>
+      <div class="field">
+        <label for="email">E-mail institucional</label>
+        <input type="email" id="email" name="email" placeholder="seu.nome@escola.edu.br" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" name="senha" placeholder="Sua senha" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary" id="btn-login" type="submit">Entrar</button>
+    </form>
+
+    <aside class="login-help" aria-label="Acesso de demonstração">
+      <strong>Login rápido de teste:</strong>
+      <p>Aluno: <em>aluno@atlas.com</em> / <em>Teste@1234</em></p>
+      <button class="btn btn-outline btn--sm" id="quick-login" type="button">Entrar como aluno</button>
+    </aside>
+  </main>
+
+  <script src="supabase-cdn.js"></script>
+  <script src="supabase.js"></script>
+  <script>
+    const loginForm = document.querySelector("#login-form");
+    const loginButton = document.querySelector("#btn-login");
+    const loginError = document.querySelector("#login-error");
+
+    getSessao().then(async (session) => {
+      if (!session) return;
+      const profile = await getPerfil();
+      if (profile) await redirecionarPorPerfil();
+    });
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!loginForm.reportValidity()) return;
+
+      loginError.hidden = true;
+      loginButton.disabled = true;
+      try {
+        await login(loginForm.elements.email.value.trim(), loginForm.elements.senha.value);
+        await redirecionarPorPerfil();
+      } catch (error) {
+        console.error("Erro no login do Portal Atlas:", error);
+        loginError.textContent = error.message || "Não foi possível entrar. Verifique seus dados e tente novamente.";
+        loginError.hidden = false;
+        loginButton.disabled = false;
+      }
+    });
+
+    document.querySelector("#quick-login").addEventListener("click", () => {
+      loginForm.elements.email.value = "aluno@atlas.com";
+      loginForm.elements.senha.value = "Teste@1234";
+      loginForm.requestSubmit();
+    });
+  </script>
+  <footer class="dev-footer">Versão em desenvolvimento</footer>
+</body>
+</html>

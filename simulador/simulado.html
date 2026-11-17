@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="theme-color" content="#f6f7fb">
+	<meta name="description" content="Configure e faça seu simulado ENEM no Portal Atlas.">
+	<title>Simulado ENEM | Portal Atlas</title>
+	<link rel="stylesheet" href="../portal/style.css">
+	<link rel="stylesheet" href="../portal/atlas.css">
+	<link rel="stylesheet" href="../portal/style.extra.css">
+	<link rel="stylesheet" href="simulado.css">
+	<script src="../portal/supabase-cdn.js"></script>
+	<script src="../portal/supabase.js"></script>
+	<script src="simulado.js" defer></script>
+</head>
+<body class="enem-simulator">
+	<header class="dashboard-header">
+		<a class="brand dashboard-brand" href="../portal/dashboard.html" aria-label="Portal Atlas, início">
+			<span class="brand-mark" aria-hidden="true">◈</span>
+			<span>Portal Atlas</span>
+		</a>
+		<nav class="dashboard-nav" aria-label="Navegação principal">
+			<a class="nav-current" href="../portal/dashboard.html">Painel do aluno</a>
+		</nav>
+	</header>
+
+	<main class="dashboard-shell exam-shell">
+		<a class="back-link" href="../portal/dashboard.html"><span aria-hidden="true">&#8592;</span> Voltar ao painel</a>
+		<section class="exam-setup-card" id="setup-panel" aria-labelledby="exam-heading">
+			<div class="exam-setup-intro">
+				<p class="dashboard-kicker">SIMULADO PERSONALIZADO</p>
+				<h1 id="exam-heading">Sua prova, <span>do seu jeito.</span></h1>
+				<p>Escolha as matérias e o tempo. O número de questões é calculado com uma média de quatro minutos por questão.</p>
+			</div>
+			<form class="exam-config" id="exam-config">
+				<fieldset class="exam-fieldset">
+					<legend>Quais matérias quer praticar?</legend>
+					<label class="choice-card">
+						<input type="radio" name="scope" value="all" checked>
+						<span class="choice-card-content"><strong>Todas as matérias</strong><small>Questões variadas das quatro áreas do ENEM.</small></span>
+						<span class="choice-radio" aria-hidden="true"></span>
+					</label>
+					<label class="choice-card">
+						<input type="radio" name="scope" value="single">
+						<span class="choice-card-content"><strong>Apenas uma matéria</strong><small>Concentre o treino em uma área específica.</small></span>
+						<span class="choice-radio" aria-hidden="true"></span>
+					</label>
+					<div class="field-group subject-field" id="subject-field" hidden>
+						<label for="subject-select">Matéria</label>
+						<select id="subject-select" name="subject">
+							<option value="Linguagens">Linguagens</option>
+							<option value="Ciências humanas">Ciências humanas</option>
+							<option value="Ciências da natureza">Ciências da natureza</option>
+							<option value="Matemática">Matemática</option>
+						</select>
+					</div>
+				</fieldset>
+
+				<div class="duration-panel">
+					<div>
+						<p class="dashboard-kicker">TEMPO E DISTRIBUIÇÃO</p>
+						<h2>Como quer praticar?</h2>
+						<p>Os treinos curtos são versões reduzidas. Para uma prova completa, reserve no mínimo 4 horas; a prática real de 90 questões dura 6 horas.</p>
+					</div>
+					<div class="duration-fields">
+						<div class="field-group">
+							<label for="duration-select">Duração da prova</label>
+							<select id="duration-select" name="duration" aria-label="Duração da prova">
+								<option value="30">Treino Rápido 30min · 7 questões</option>
+								<option value="120">Treino 2h · 30 questões</option>
+								<option value="360" selected>Prática Real 6h · 90 questões</option>
+							</select>
+						</div>
+					</div>
+					<p class="question-estimate" id="question-estimate" aria-live="polite">90 questões <span>·</span> Prática Real 6h</p>
+					<p class="question-distribution" id="question-distribution" aria-live="polite">Linguagens: 23 · Ciências humanas: 23 · Ciências da natureza: 22 · Matemática: 22</p>
+				</div>
+				<div class="exam-note"><span aria-hidden="true">i</span><p>Por enquanto, questões com indicação de imagem são retiradas do simulado. As dificuldades exibidas são estimativas, não classificações oficiais do ENEM.</p></div>
+				<p class="form-status exam-status" id="load-status" role="status" aria-live="polite" hidden></p>
+				<button class="submit-button start-exam-button" id="start-exam" type="submit" disabled>Carregando questões <span aria-hidden="true">&#8594;</span></button>
+			</form>
+		</section>
+
+		<section class="exam-run-card" id="run-panel" aria-labelledby="run-heading" hidden>
+			<div class="exam-run-top">
+				<div><p class="dashboard-kicker" id="run-kicker">SIMULADO EM ANDAMENTO</p><h1 id="run-heading">Questão <span id="current-number">1</span></h1></div>
+				<div class="exam-clock" aria-label="Tempo restante"><span aria-hidden="true">◷</span><strong id="timer">06:00:00</strong><small>restantes</small></div>
+			</div>
+			<div class="question-progress"><span id="progress-label">Questão 1 de 90</span><span class="difficulty-badge" id="difficulty-badge">Média estimada</span></div>
+			<div class="question-source" id="question-source"></div>
+			<p class="question-statement" id="question-statement"></p>
+			<div class="answer-options" id="answer-options" role="group" aria-label="Alternativas"></div>
+			<div class="question-controls">
+				<button class="secondary-button" id="previous-question" type="button">Questão anterior</button>
+				<button class="secondary-button finish-exam-button" id="finish-exam" type="button">Encerrar simulado</button>
+				<button class="submit-button next-question-button" id="next-question" type="button">Próxima questão <span aria-hidden="true">&#8594;</span></button>
+			</div>
+		</section>
+
+		<section class="exam-result-card" id="result-panel" aria-labelledby="result-heading" hidden>
+			<p class="dashboard-kicker">SIMULADO CONCLUÍDO</p>
+			<h1 id="result-heading">Seu resultado</h1>
+			<p class="result-summary" id="result-summary"></p>
+			<section class="area-analysis" aria-labelledby="area-analysis-heading">
+				<div>
+					<p class="dashboard-kicker">SEU DESEMPENHO</p>
+					<h2 id="area-analysis-heading">Aproveitamento por área</h2>
+					<p class="area-analysis-description">Percentual de acertos nas questões incluídas. Questões em branco contam como não acertadas.</p>
+				</div>
+				<div class="area-analysis-content">
+					<svg class="area-radar" id="area-radar" viewBox="0 0 420 360" role="img" aria-label="Gráfico em teia do aproveitamento por área"></svg>
+					<ul class="area-results" id="area-results" aria-label="Resultados detalhados por área"></ul>
+				</div>
+				<p class="area-insights" id="area-insights" aria-live="polite"></p>
+			</section>
+			<div class="result-breakdown" id="result-breakdown"></div>
+			<p class="result-note" id="result-note"></p>
+			<a class="submit-button result-home-link" href="../portal/dashboard.html">Voltar ao painel <span aria-hidden="true">&#8594;</span></a>
+		</section>
+		<footer class="dashboard-footer"><span>Portal Atlas</span><span>Preparação que acompanha você.</span></footer>
+	</main>
+</body>
+</html>

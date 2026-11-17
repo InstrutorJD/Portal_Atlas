@@ -1,0 +1,648 @@
+.enem-simulator {
+	--exam-primary: #1766ff;
+	--exam-primary-dark: #0f52d6;
+	--exam-border: #e6e9ef;
+	--exam-muted: #6b7280;
+	min-height: 100vh;
+	padding: 0 0 55px;
+	background: #f6f7fb;
+	color: #1f2933;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.enem-simulator *,
+.enem-simulator *::before,
+.enem-simulator *::after {
+	box-sizing: border-box;
+}
+
+.enem-simulator .dashboard-header {
+	min-height: 76px;
+	padding: 0 max(24px, calc((100% - 1120px) / 2));
+	border-bottom: 1px solid var(--exam-border);
+	background: #fff;
+}
+
+.enem-simulator .dashboard-brand {
+	gap: 10px;
+	color: #1f2933;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.enem-simulator .brand-mark {
+	width: 36px;
+	height: 36px;
+	border-radius: 9px;
+	color: #fff;
+	background: var(--exam-primary);
+}
+
+.enem-simulator .dashboard-nav {
+	gap: 0;
+	font-size: 14px;
+}
+
+.enem-simulator .nav-current {
+	color: var(--exam-primary-dark);
+	text-decoration: none;
+}
+
+.enem-simulator .exam-shell {
+	width: min(100% - 40px, 1000px);
+	padding: 28px 0 20px;
+}
+
+.enem-simulator .back-link {
+	gap: 8px;
+	color: var(--exam-muted);
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.enem-simulator .back-link:hover {
+	color: var(--exam-primary);
+}
+
+.enem-simulator .exam-setup-card,
+.enem-simulator .exam-run-card,
+.enem-simulator .exam-result-card {
+	margin-top: 20px;
+	padding: clamp(24px, 4vw, 40px);
+	border: 1px solid var(--exam-border);
+	border-radius: var(--radius);
+	background: #fff;
+	box-shadow: var(--shadow-sm);
+}
+
+.enem-simulator .dashboard-kicker {
+	color: var(--exam-primary-dark);
+	font-family: inherit;
+	font-size: 11px;
+	letter-spacing: 1px;
+}
+
+.enem-simulator .exam-setup-intro h1,
+.enem-simulator .exam-run-top h1,
+.enem-simulator .exam-result-card h1 {
+	color: #1f2933;
+	font-family: inherit;
+	font-size: clamp(28px, 4vw, 38px);
+	font-weight: 700;
+}
+
+.enem-simulator .exam-setup-intro h1 span {
+	color: var(--exam-primary);
+}
+
+.enem-simulator .exam-setup-intro > p:last-child {
+	color: var(--exam-muted);
+	font-size: 15px;
+	line-height: 1.65;
+}
+
+.enem-simulator .exam-config {
+	gap: 22px;
+	margin-top: 26px;
+}
+
+.enem-simulator .exam-fieldset legend {
+	margin-bottom: 12px;
+	color: #1f2933;
+	font-size: 15px;
+}
+
+.enem-simulator .choice-card {
+	min-height: 76px;
+	gap: 14px;
+	padding: 15px 17px;
+	border: 1px solid var(--exam-border);
+	border-radius: 9px;
+	background: #fff;
+}
+
+.enem-simulator .choice-card:hover,
+.enem-simulator .choice-card:has(input:checked) {
+	border-color: var(--exam-primary);
+	background: #f4f8ff;
+}
+
+.enem-simulator .choice-card input:focus-visible + .choice-card-content {
+	outline-color: var(--exam-primary);
+}
+
+.enem-simulator .choice-card-content strong {
+	color: #1f2933;
+	font-size: 14px;
+}
+
+.enem-simulator .choice-card-content small {
+	color: var(--exam-muted);
+	font-size: 12px;
+}
+
+.enem-simulator .choice-radio {
+	width: 19px;
+	height: 19px;
+	border-color: #9ca8b7;
+}
+
+.enem-simulator .choice-card input:checked ~ .choice-radio {
+	border: 6px solid var(--exam-primary);
+}
+
+.enem-simulator .subject-field {
+	margin-top: 8px;
+}
+
+.enem-simulator .duration-fields {
+	grid-template-columns: minmax(0, 1fr);
+	max-width: 350px;
+}
+
+.enem-simulator .field-group label,
+.enem-simulator .duration-fields label {
+	display: block;
+	margin-bottom: 6px;
+	color: #374151;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.enem-simulator .field-group select {
+	min-height: 44px;
+	padding: 0 12px;
+	border: 1px solid #d5dbe5;
+	border-radius: 8px;
+	color: #1f2933;
+	background: #fff;
+	font: inherit;
+	font-size: 14px;
+}
+
+.enem-simulator select:focus-visible,
+.enem-simulator button:focus-visible,
+.enem-simulator a:focus-visible {
+	outline: 3px solid rgb(23 102 255 / 28%);
+	outline-offset: 2px;
+}
+
+.enem-simulator .duration-panel {
+	gap: 20px;
+	padding: 21px;
+	border: 1px solid #e1e9f8;
+	border-radius: 10px;
+	background: #f4f7fc;
+}
+
+.enem-simulator .duration-panel h2 {
+	color: #1f2933;
+	font-family: inherit;
+	font-size: 19px;
+}
+
+.enem-simulator .duration-panel > div:first-child > p:last-child {
+	color: var(--exam-muted);
+	font-size: 13px;
+}
+
+.enem-simulator .question-estimate {
+	color: var(--exam-primary-dark);
+	font-size: 13px;
+}
+
+.enem-simulator .question-estimate strong {
+	font-size: 15px;
+}
+
+.enem-simulator .question-distribution {
+	grid-column: 1 / -1;
+	margin: -10px 0 0;
+	color: #475467;
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+.enem-simulator .exam-note {
+	gap: 11px;
+	padding: 14px 16px;
+	border: 1px solid #f1dfaa;
+	border-left: 4px solid #e4ad27;
+	border-radius: 8px;
+	color: #655528;
+	background: #fffaf0;
+	font-size: 13px;
+}
+
+.enem-simulator .exam-note > span {
+	width: 20px;
+	height: 20px;
+	border-color: #d3a32b;
+	font-size: 12px;
+}
+
+.enem-simulator .form-status {
+	color: #334155;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.enem-simulator .submit-button,
+.enem-simulator .secondary-button {
+	display: inline-flex;
+	min-height: 46px;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 0 18px;
+	border: 1px solid var(--exam-primary);
+	border-radius: 8px;
+	color: #fff;
+	background: var(--exam-primary);
+	font: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.enem-simulator .submit-button:hover:not(:disabled) {
+	border-color: var(--exam-primary-dark);
+	background: var(--exam-primary-dark);
+	box-shadow: 0 5px 14px rgb(23 102 255 / 18%);
+}
+
+.enem-simulator .submit-button:disabled {
+	border-color: #9aa8bd;
+	background: #9aa8bd;
+	cursor: wait;
+}
+
+.enem-simulator .exam-run-top {
+	padding-bottom: 20px;
+	border-bottom-color: var(--exam-border);
+}
+
+.enem-simulator .exam-run-top h1 {
+	font-size: 30px;
+}
+
+.enem-simulator .exam-clock {
+	padding: 11px 14px;
+	border: 1px solid #d9e5fa;
+	border-radius: 9px;
+	background: #f4f8ff;
+}
+
+.enem-simulator .exam-clock > span {
+	color: var(--exam-primary);
+}
+
+.enem-simulator .exam-clock strong {
+	color: #1f2933;
+	font-size: 16px;
+}
+
+.enem-simulator .exam-clock small {
+	color: var(--exam-muted);
+	font-size: 11px;
+}
+
+.enem-simulator .question-progress {
+	margin: 20px 0 16px;
+	color: var(--exam-muted);
+	font-size: 13px;
+}
+
+.enem-simulator .difficulty-badge {
+	border-radius: 999px;
+	background: #eef4ff;
+	color: #2456a6;
+	font-size: 11px;
+}
+
+.enem-simulator .difficulty-badge[data-difficulty="média"] {
+	background: #fff6df;
+	color: #85610e;
+}
+
+.enem-simulator .difficulty-badge[data-difficulty="difícil"] {
+	background: #fff0ed;
+	color: #a33b2c;
+}
+
+.enem-simulator .question-source {
+	margin-bottom: 12px;
+	color: var(--exam-primary-dark);
+	font-size: 12px;
+}
+
+.enem-simulator .question-statement {
+	margin-bottom: 24px;
+	color: #1f2933;
+	font-family: inherit;
+	font-size: 17px;
+	font-weight: 600;
+	line-height: 1.7;
+}
+
+.enem-simulator .answer-options {
+	gap: 10px;
+}
+
+.enem-simulator .answer-option {
+	grid-template-columns: 0 32px minmax(0, 1fr);
+	gap: 12px;
+	padding: 14px;
+	border: 1px solid var(--exam-border);
+	border-radius: 9px;
+	background: #fff;
+}
+
+.enem-simulator .answer-option:hover,
+.enem-simulator .answer-option:has(input:checked) {
+	border-color: var(--exam-primary);
+	background: #f4f8ff;
+}
+
+.enem-simulator .answer-option input:focus-visible + .answer-letter {
+	outline: 3px solid rgb(23 102 255 / 28%);
+	outline-offset: 2px;
+}
+
+.enem-simulator .answer-letter {
+	width: 29px;
+	height: 29px;
+	border-color: #d5dbe5;
+	color: #465366;
+	font-size: 12px;
+}
+
+.enem-simulator .answer-option:has(input:checked) .answer-letter {
+	border-color: var(--exam-primary);
+	background: var(--exam-primary);
+}
+
+.enem-simulator .answer-text {
+	padding-top: 4px;
+	color: #394455;
+	font-size: 14px;
+	line-height: 1.65;
+}
+
+.enem-simulator .question-controls {
+	gap: 10px;
+	margin-top: 26px;
+}
+
+.enem-simulator .secondary-button {
+	border-color: #d5dbe5;
+	color: #344054;
+	background: #fff;
+	font-size: 13px;
+}
+
+.enem-simulator .secondary-button:hover:not(:disabled) {
+	border-color: var(--exam-primary);
+	color: var(--exam-primary-dark);
+	background: #f4f8ff;
+}
+
+.enem-simulator .secondary-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.enem-simulator .finish-exam-button {
+	border-color: #f0c7c2;
+	color: #a33b2c;
+}
+
+.enem-simulator .finish-exam-button:hover:not(:disabled) {
+	border-color: #e3a9a2;
+	color: #8d2d21;
+	background: #fff5f3;
+}
+
+.enem-simulator .result-summary {
+	color: #475467;
+	font-size: 15px;
+}
+
+.enem-simulator .area-analysis {
+	display: grid;
+	gap: 18px;
+	margin-top: 24px;
+	padding: 22px;
+	border: 1px solid var(--exam-border);
+	border-radius: 10px;
+	background: #fbfcfe;
+}
+
+.enem-simulator .area-analysis h2 {
+	margin: 6px 0;
+	color: #1f2933;
+	font-size: 20px;
+}
+
+.enem-simulator .area-analysis-description {
+	margin: 0;
+	color: var(--exam-muted);
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.enem-simulator .area-analysis-content {
+	display: grid;
+	grid-template-columns: minmax(0, 1.1fr) minmax(220px, 0.9fr);
+	align-items: center;
+	gap: 20px;
+}
+
+.enem-simulator .area-radar {
+	display: block;
+	width: 100%;
+	max-height: 360px;
+	overflow: visible;
+}
+
+.enem-simulator .radar-grid {
+	fill: none;
+	stroke: #dce3ed;
+	stroke-width: 1;
+}
+
+.enem-simulator .radar-axis {
+	stroke: #dce3ed;
+	stroke-width: 1;
+}
+
+.enem-simulator .radar-result {
+	fill: rgb(23 102 255 / 18%);
+	stroke: var(--exam-primary);
+	stroke-width: 2.5;
+	stroke-linejoin: round;
+}
+
+.enem-simulator .radar-point {
+	fill: #fff;
+	stroke: var(--exam-primary);
+	stroke-width: 2.5;
+}
+
+.enem-simulator .radar-label {
+	fill: #475467;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.enem-simulator .area-results {
+	display: grid;
+	gap: 9px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.enem-simulator .area-result-item {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 3px 12px;
+	align-items: center;
+	padding: 11px 12px;
+	border: 1px solid var(--exam-border);
+	border-radius: 8px;
+	background: #fff;
+}
+
+.enem-simulator .area-result-name {
+	color: #344054;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.enem-simulator .area-result-item strong {
+	color: var(--exam-primary-dark);
+	font-size: 14px;
+}
+
+.enem-simulator .area-result-item small {
+	grid-column: 1 / -1;
+	color: var(--exam-muted);
+	font-size: 11px;
+}
+
+.enem-simulator .area-insights {
+	margin: 0;
+	padding: 13px 15px;
+	border-left: 4px solid var(--exam-primary);
+	border-radius: 6px;
+	color: #344054;
+	background: #eef4ff;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.enem-simulator .result-breakdown > div {
+	padding: 16px;
+	border-color: var(--exam-border);
+	border-radius: 8px;
+	color: #475467;
+	font-size: 13px;
+}
+
+.enem-simulator .result-breakdown strong {
+	color: var(--exam-primary-dark);
+	font-size: 17px;
+}
+
+.enem-simulator .result-note {
+	color: var(--exam-muted);
+	font-size: 13px;
+}
+
+.enem-simulator .dashboard-footer {
+	color: #7b8492;
+	font-size: 11px;
+}
+
+@media (max-width: 760px) {
+	.enem-simulator .dashboard-header {
+		min-height: 68px;
+		padding: 0 20px;
+	}
+
+	.enem-simulator .exam-shell {
+		width: min(100% - 32px, 1000px);
+		padding-top: 22px;
+	}
+}
+
+@media (max-width: 520px) {
+	.enem-simulator .dashboard-header {
+		padding: 0 16px;
+	}
+
+	.enem-simulator .exam-shell {
+		width: min(100% - 24px, 1000px);
+		padding-top: 18px;
+	}
+
+	.enem-simulator .exam-setup-card,
+	.enem-simulator .exam-run-card,
+	.enem-simulator .exam-result-card {
+		padding: 22px 18px;
+	}
+
+	.enem-simulator .duration-panel {
+		grid-template-columns: minmax(0, 1fr);
+		padding: 16px;
+	}
+
+	.enem-simulator .question-controls {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.enem-simulator .finish-exam-button {
+		grid-column: 1 / -1;
+		grid-row: 2;
+	}
+
+	.enem-simulator .exam-run-top {
+		align-items: center;
+		gap: 10px;
+	}
+
+	.enem-simulator .exam-run-top h1 {
+		font-size: 25px;
+	}
+
+	.enem-simulator .exam-clock {
+		padding: 8px;
+	}
+
+	.enem-simulator .exam-clock strong {
+		font-size: 13px;
+	}
+
+	.enem-simulator .result-breakdown {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.enem-simulator .area-analysis {
+		padding: 16px 12px;
+	}
+
+	.enem-simulator .area-analysis-content {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 12px;
+	}
+
+	.enem-simulator .area-radar {
+		max-width: 390px;
+		margin: 0 auto;
+	}
+}

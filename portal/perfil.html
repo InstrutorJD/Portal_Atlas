@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="theme-color" content="#f5f4ee">
+	<meta name="description" content="Acompanhe seus resultados e seu histórico de simulados no Simula ENEM.">
+	<title>Meu perfil | Simula ENEM</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="style.css">
+	<script src="perfil.js" defer></script>
+</head>
+<body class="dashboard-body">
+	<header class="dashboard-header">
+		<a class="brand dashboard-brand" href="inicio.html" aria-label="Simula ENEM, início">
+			<span class="brand-mark" aria-hidden="true">S</span>
+			<span>simula<span class="brand-light">enem</span></span>
+		</a>
+		<nav class="dashboard-nav" aria-label="Navegação principal">
+			<a class="nav-current" href="inicio.html">Início</a>
+			<button class="logout-button" id="logout-button" type="button">Sair <span aria-hidden="true">&#8599;</span></button>
+		</nav>
+	</header>
+
+	<main class="dashboard-shell">
+		<div class="demo-banner" role="note">
+			<span class="demo-banner-mark" aria-hidden="true">i</span>
+			<p><strong>Ambiente de demonstração</strong> Os resultados e o histórico abaixo são ilustrativos e não representam provas realizadas.</p>
+		</div>
+
+		<section class="profile-intro" aria-labelledby="welcome-heading">
+			<div>
+				<p class="dashboard-kicker">SEU ESPAÇO DE ESTUDOS</p>
+				<h1 id="welcome-heading">Olá, <span id="student-name">estudante</span>.</h1>
+				<p class="profile-subtitle">Veja como está sua preparação e acompanhe sua evolução.</p>
+			</div>
+			<p class="profile-email" id="student-email"></p>
+		</section>
+
+		<section class="summary-grid" aria-label="Resumo da sua preparação">
+			<article class="summary-item summary-score">
+				<p>NOTA MÉDIA</p>
+				<strong>711<span> pontos</span></strong>
+				<small>na última tentativa</small>
+			</article>
+			<article class="summary-item summary-correct">
+				<p>QUESTÕES CERTAS</p>
+				<strong>138<span> / 180</span></strong>
+				<small>77% de aproveitamento</small>
+			</article>
+			<article class="summary-item summary-tests">
+				<p>SIMULADOS FEITOS</p>
+				<strong>5</strong>
+				<small>no histórico de demonstração</small>
+			</article>
+			<article class="summary-item summary-time">
+				<p>TEMPO DE PROVA</p>
+				<strong>5h12</strong>
+				<small>na última tentativa</small>
+			</article>
+		</section>
+
+		<section class="results-section" aria-labelledby="results-heading">
+			<div class="results-chart-panel">
+				<div class="section-heading">
+					<div>
+						<p class="dashboard-kicker">24 OUT. 2026 <span class="heading-divider"></span> SIMULADO COMPLETO</p>
+						<h2 id="results-heading">Resultado por área</h2>
+					</div>
+					<p class="chart-scale">Escala de 0 a 1.000</p>
+				</div>
+				<div class="area-chart" id="area-chart" role="img" aria-label="Notas da última tentativa por área do conhecimento"></div>
+			</div>
+			<aside class="attempt-panel" aria-labelledby="attempt-heading">
+				<p class="dashboard-kicker">ÚLTIMA TENTATIVA</p>
+				<h2 id="attempt-heading">Simulado ENEM<br>completo</h2>
+				<div class="accuracy-chart" role="img" aria-label="138 questões certas de 180, aproveitamento de 77 por cento">
+					<div class="accuracy-ring"><span>77<small>%</small></span></div>
+					<p><strong>138 acertos</strong><span>de 180 questões</span></p>
+				</div>
+				<div class="attempt-meta"><span>Concluído em</span><strong>24 de outubro de 2026</strong></div>
+				<div class="attempt-meta"><span>Duração</span><strong>5h12</strong></div>
+			</aside>
+		</section>
+
+		<section class="history-section" aria-labelledby="history-heading">
+			<div class="section-heading history-heading">
+				<div>
+					<p class="dashboard-kicker">SUA TRAJETÓRIA</p>
+					<h2 id="history-heading">Histórico de simulados</h2>
+				</div>
+				<span class="history-count">5 tentativas</span>
+			</div>
+			<div class="history-table-wrap">
+				<table class="history-table">
+					<thead>
+						<tr>
+							<th scope="col">Simulado</th>
+							<th scope="col">Data</th>
+							<th scope="col">Nota média</th>
+							<th scope="col">Acertos</th>
+							<th scope="col">Duração</th>
+						</tr>
+					</thead>
+					<tbody id="history-rows"></tbody>
+				</table>
+			</div>
+		</section>
+		<footer class="dashboard-footer"><span>Simula ENEM</span><span>Preparação que acompanha você.</span></footer>
+	</main>
+</body>
+</html>

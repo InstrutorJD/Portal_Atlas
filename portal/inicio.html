@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="theme-color" content="#f5f4ee">
+	<meta name="description" content="Escolha seu próximo passo na preparação para o ENEM.">
+	<title>Início | Simula ENEM</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="style.css">
+	<script src="inicio.js" defer></script>
+</head>
+<body class="dashboard-body">
+	<header class="dashboard-header">
+		<a class="brand dashboard-brand" href="inicio.html" aria-label="Simula ENEM, início">
+			<span class="brand-mark" aria-hidden="true">S</span>
+			<span>simula<span class="brand-light">enem</span></span>
+		</a>
+		<nav class="dashboard-nav" aria-label="Navegação principal">
+			<a class="profile-button" href="perfil.html"><span class="profile-button-icon" aria-hidden="true">◎</span> Meu perfil</a>
+			<button class="logout-button" id="logout-button" type="button">Sair <span aria-hidden="true">&#8599;</span></button>
+		</nav>
+	</header>
+
+	<main class="dashboard-shell home-shell">
+		<section class="home-intro" aria-labelledby="home-heading">
+			<div>
+				<p class="dashboard-kicker">SEU ESPAÇO DE ESTUDOS</p>
+				<h1 id="home-heading">Olá, <span id="student-name">estudante</span>.</h1>
+				<p class="profile-subtitle">Um passo de cada vez. Escolha como quer estudar hoje.</p>
+			</div>
+		</section>
+
+		<section class="home-card-grid" aria-label="Opções de estudo">
+			<article class="home-card exam-card">
+				<div class="home-card-topline"><span class="card-symbol" aria-hidden="true">✳</span><span>PRATIQUE NO SEU RITMO</span></div>
+				<div class="home-card-copy">
+					<p class="dashboard-kicker">SIMULADO ENEM</p>
+					<h2>Uma prova por vez.<br><span>Mais perto do seu objetivo.</span></h2>
+					<p>Monte um simulado com todas as áreas ou escolha uma matéria. As questões são embaralhadas a cada tentativa.</p>
+					<a class="home-card-action" href="simulado.html">Configurar prova <span aria-hidden="true">&#8594;</span></a>
+				</div>
+				<div class="exam-card-decoration" aria-hidden="true">ENEM<br>2026</div>
+			</article>
+
+			<article class="home-card secondary-home-card">
+				<div class="home-card-topline"><span class="card-symbol card-symbol-light" aria-hidden="true">↗</span><span>ACOMPANHE SUA EVOLUÇÃO</span></div>
+				<div class="home-card-copy">
+					<p class="dashboard-kicker">SEU PERFIL</p>
+					<h2>Veja seu histórico<br>de preparação.</h2>
+					<p>Acesse seu resumo e os resultados demonstrativos da sua jornada.</p>
+					<a class="text-card-action" href="perfil.html">Abrir meu perfil <span aria-hidden="true">&#8594;</span></a>
+				</div>
+			</article>
+
+			<article class="home-card tip-home-card">
+				<div class="home-card-topline"><span class="card-symbol card-symbol-gold" aria-hidden="true">✦</span><span>LEMBRETE DE HOJE</span></div>
+				<div class="home-card-copy">
+					<p class="dashboard-kicker">CONSISTÊNCIA CONTA</p>
+					<h2>Seu progresso<br>é feito de tentativas.</h2>
+					<p>Reserve um tempo com calma para cada questão. No simulado, cada questão corresponde a cerca de quatro minutos.</p>
+				</div>
+				<div class="tip-card-number" aria-hidden="true">04<span>min</span></div>
+			</article>
+		</section>
+		<footer class="dashboard-footer"><span>Simula ENEM</span><span>Preparação que acompanha você.</span></footer>
+	</main>
+</body>
+</html>
