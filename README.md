@@ -35,3 +35,13 @@ Fonte oficial da INEP:
 https://www.gov.br/inep/pt-br/areas-de-atuacao/avaliacao-e-exames-educacionais/enem/provas-e-gabaritos
 
 O simulador usa a sessão de aluno do Portal Atlas, carrega questões e gabaritos locais das provas disponíveis e oferece três modalidades: Treino Rápido (30 min, 7 questões), Treino (2 h, 30 questões) e Prática Real (6 h, 90 questões). As questões são divididas de forma equilibrada entre Linguagens, Ciências Humanas, Ciências da Natureza e Matemática; a divisão é exibida antes de iniciar. Se faltar questão em uma área, o algoritmo redistribui as vagas entre as áreas disponíveis. Para uma prova completa, reserve no mínimo 4 horas. O resultado apresenta acertos, erros e questões em branco; não é uma nota TRI oficial do ENEM.
+
+## Manutenção do banco de questões
+
+Os arquivos `dados/provas/prova-AAAA` seguem um formato padronizado (descrito em `simulador/parser.js`). Ferramentas, executadas com Node a partir da raiz:
+
+- `node dados/ferramentas/normalizar-provas.js [ano] [--dry-run] [--verbose]`: padroniza cabeçalhos, marcações de imagem, opções de língua e remove duplicatas. Rode depois de colar uma prova nova.
+- `node dados/ferramentas/gerar-indice-imagens.js`: atualiza `assets/imagens/indice.json`. Rode sempre que adicionar imagens (`AAAA-questao-NN.png`, ou `-ingles`/`-espanhol` nas questões de língua estrangeira).
+- `node dados/ferramentas/verificar-banco.js [--detalhes]`: mostra quantas questões de cada ano entram no simulador e por que as demais foram descartadas.
+
+Questões marcadas com `(tem imagem)` só entram no simulado se a imagem correspondente existir no índice. Questões cujas alternativas são imagens ficam de fora.

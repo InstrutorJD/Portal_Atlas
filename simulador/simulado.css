@@ -1,3 +1,8 @@
+/* Classes com "display: flex" (ex.: .submit-button) anulavam o atributo hidden. */
+.enem-simulator [hidden] {
+	display: none !important;
+}
+
 .enem-simulator {
 	--exam-primary: #1766ff;
 	--exam-primary-dark: #0f52d6;
@@ -156,13 +161,22 @@
 	margin-top: 8px;
 }
 
-.enem-simulator .duration-fields {
-	grid-template-columns: minmax(0, 1fr);
-	max-width: 350px;
+/* Duração como cartões de opção única, no mesmo visual das matérias */
+.enem-simulator .duration-options {
+	grid-column: 1 / -1;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.enem-simulator .field-group label,
-.enem-simulator .duration-fields label {
+.enem-simulator .duration-options legend {
+	margin-bottom: 10px;
+	font-size: 13px;
+}
+
+.enem-simulator .duration-options .choice-card {
+	min-height: 68px;
+}
+
+.enem-simulator .field-group label {
 	display: block;
 	margin-bottom: 6px;
 	color: #374151;
@@ -202,11 +216,6 @@
 	font-size: 19px;
 }
 
-.enem-simulator .duration-panel > div:first-child > p:last-child {
-	color: var(--exam-muted);
-	font-size: 13px;
-}
-
 .enem-simulator .question-estimate {
 	color: var(--exam-primary-dark);
 	font-size: 13px;
@@ -240,6 +249,176 @@
 	height: 20px;
 	border-color: #d3a32b;
 	font-size: 12px;
+}
+
+/* Penalidade: selo durante a prova, aviso no resultado e diálogo de advertência */
+.enem-simulator .question-progress-badges {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+
+.enem-simulator .penalty-badge {
+	padding: 4px 10px;
+	border-radius: 999px;
+	color: #b42318;
+	background: #fef3f2;
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.enem-simulator .result-penalty {
+	margin: 14px 0 0;
+	padding: 13px 15px;
+	border-left: 4px solid #e4ad27;
+	border-radius: 6px;
+	color: #655528;
+	background: #fffaf0;
+	font-size: 14px;
+	line-height: 1.55;
+}
+
+.enem-simulator .result-penalty[data-ended="true"] {
+	border-left-color: #b42318;
+	color: #7a271a;
+	background: #fef3f2;
+	font-weight: 600;
+}
+
+.enem-simulator .exam-warning {
+	position: fixed;
+	inset: 0;
+	z-index: 2000;
+	display: grid;
+	place-items: center;
+	padding: 16px;
+	background: rgb(15 23 42 / 55%);
+}
+
+.enem-simulator .exam-warning-box {
+	display: grid;
+	gap: 12px;
+	width: min(100%, 460px);
+	padding: 26px;
+	border-top: 5px solid #b42318;
+	border-radius: 12px;
+	background: #fff;
+	box-shadow: 0 24px 60px rgb(15 23 42 / 30%);
+}
+
+.enem-simulator .exam-warning-box .dashboard-kicker {
+	margin: 0;
+	color: #b42318;
+}
+
+.enem-simulator .exam-warning-box h2 {
+	margin: 0;
+	color: #1f2933;
+	font-size: 21px;
+}
+
+.enem-simulator .exam-warning-box p:not(.dashboard-kicker) {
+	margin: 0;
+	color: #475467;
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+.enem-simulator .exam-warning-box .submit-button {
+	margin-top: 6px;
+}
+
+/* Modal de início: card vermelho, chamativo */
+.enem-simulator .exam-start-dialog .exam-warning-box {
+	gap: 16px;
+	padding: 0 0 22px;
+	overflow: hidden;
+	border: 2px solid #d92d20;
+	border-top: 0;
+	box-shadow: 0 24px 60px rgb(180 35 24 / 35%);
+}
+
+.enem-simulator .start-dialog-header {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 20px 24px;
+	background: #d92d20;
+}
+
+.enem-simulator .start-dialog-icon {
+	display: grid;
+	flex: 0 0 auto;
+	width: 38px;
+	height: 38px;
+	place-items: center;
+	border-radius: 50%;
+	color: #d92d20;
+	background: #fff;
+	font-size: 22px;
+	font-weight: 800;
+}
+
+.enem-simulator .exam-start-dialog .start-dialog-header .dashboard-kicker {
+	color: #fee4e2;
+}
+
+.enem-simulator .exam-start-dialog .start-dialog-header h2 {
+	margin-top: 2px;
+	color: #fff;
+	font-size: 20px;
+}
+
+.enem-simulator .exam-start-dialog .exam-warning-box > p,
+.enem-simulator .exam-start-dialog .dialog-actions {
+	margin-right: 24px;
+	margin-left: 24px;
+}
+
+.enem-simulator .exam-start-dialog .exam-warning-box > p {
+	color: #7a271a;
+	font-size: 15px;
+}
+
+.enem-simulator .exam-start-dialog .submit-button {
+	background: #d92d20;
+}
+
+.enem-simulator .exam-start-dialog .submit-button span {
+	color: #fff;
+}
+
+.enem-simulator .exam-start-dialog .submit-button:hover {
+	background: #b42318;
+}
+
+.enem-simulator .exam-start-dialog .submit-button:focus-visible {
+	outline-color: rgb(217 45 32 / 35%);
+}
+
+.enem-simulator .dialog-actions {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 10px;
+	margin-top: 6px;
+}
+
+.enem-simulator .dialog-actions .submit-button,
+.enem-simulator .dialog-actions .secondary-button {
+	min-height: 46px;
+	margin-top: 0;
+}
+
+.enem-simulator .dialog-actions .secondary-button {
+	padding: 0 18px;
+}
+
+/* Em tela cheia a página precisa de fundo próprio (senão fica preto atrás do conteúdo). */
+.enem-simulator:fullscreen,
+html:fullscreen {
+	overflow-y: auto;
+	background: #f6f7fb;
 }
 
 .enem-simulator .form-status {
@@ -346,6 +525,36 @@
 	font-size: 17px;
 	font-weight: 600;
 	line-height: 1.7;
+}
+
+.enem-simulator .question-statement > p + p,
+.enem-simulator .question-statement > * + .question-figure,
+.enem-simulator .question-statement > .question-figure + * {
+	margin-top: 14px;
+}
+
+.enem-simulator .question-shared-text {
+	padding-left: 14px;
+	border-left: 3px solid #e6e9ef;
+	font-weight: 500;
+}
+
+.enem-simulator .question-figure {
+	margin: 0;
+	padding: 12px;
+	border: 1px solid #e6e9ef;
+	border-radius: 10px;
+	background: #ffffff;
+	text-align: center;
+}
+
+.enem-simulator .question-figure img {
+	display: block;
+	max-width: 100%;
+	max-height: 70vh;
+	height: auto;
+	margin: 0 auto;
+	object-fit: contain;
 }
 
 .enem-simulator .answer-options {
@@ -535,6 +744,275 @@
 	font-size: 11px;
 }
 
+/* Itens de área clicáveis */
+.enem-simulator button.area-result-item {
+	width: 100%;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.enem-simulator button.area-result-item:hover:not(:disabled) {
+	border-color: var(--exam-primary);
+	background: #f4f8ff;
+}
+
+.enem-simulator button.area-result-item[aria-pressed="true"] {
+	border-color: var(--exam-primary);
+	background: #eef4ff;
+	box-shadow: inset 3px 0 0 var(--exam-primary);
+}
+
+.enem-simulator button.area-result-item:disabled {
+	cursor: default;
+	opacity: 0.65;
+}
+
+.enem-simulator .area-result-action {
+	grid-column: 1 / -1;
+	color: var(--exam-primary-dark);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+/* Revisão das questões por área */
+.enem-simulator .area-review {
+	display: grid;
+	gap: 16px;
+	margin-top: 18px;
+	padding: 22px;
+	border: 1px solid var(--exam-border);
+	border-radius: 10px;
+	background: #fff;
+	scroll-margin-top: 16px;
+}
+
+.enem-simulator .area-review-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.enem-simulator .area-review h2 {
+	margin: 6px 0 0;
+	color: #1f2933;
+	font-size: 20px;
+}
+
+.enem-simulator .area-review h2:focus {
+	outline: none;
+}
+
+.enem-simulator .area-review-close {
+	width: auto;
+	min-height: 38px;
+	padding: 0 14px;
+}
+
+.enem-simulator .review-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.enem-simulator .review-filter {
+	min-height: 34px;
+	padding: 0 14px;
+	border: 1px solid #d5dbe5;
+	border-radius: 999px;
+	color: #344054;
+	background: #fff;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.enem-simulator .review-filter:hover {
+	border-color: var(--exam-primary);
+	color: var(--exam-primary-dark);
+}
+
+.enem-simulator .review-filter[aria-pressed="true"] {
+	border-color: var(--exam-primary);
+	color: #fff;
+	background: var(--exam-primary);
+}
+
+.enem-simulator .review-empty {
+	margin: 0;
+	padding: 14px 16px;
+	border-radius: 8px;
+	color: #475467;
+	background: #f6f7fb;
+	font-size: 14px;
+}
+
+.enem-simulator .review-list {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.enem-simulator .review-item {
+	--status-color: #475467;
+	--status-bg: #f2f4f7;
+	border: 1px solid var(--exam-border);
+	border-left: 4px solid var(--status-color);
+	border-radius: 9px;
+	background: #fff;
+}
+
+.enem-simulator .review-item[data-status="wrong"] {
+	--status-color: #b42318;
+	--status-bg: #fef3f2;
+}
+
+.enem-simulator .review-item[data-status="correct"] {
+	--status-color: #067647;
+	--status-bg: #ecfdf3;
+}
+
+.enem-simulator .review-item summary {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 4px 12px;
+	align-items: center;
+	padding: 14px 16px;
+	cursor: pointer;
+	list-style: none;
+}
+
+.enem-simulator .review-item summary::-webkit-details-marker {
+	display: none;
+}
+
+.enem-simulator .review-item summary::after {
+	content: "Ver questão ▾";
+	grid-column: 1 / -1;
+	color: var(--exam-primary-dark);
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.enem-simulator .review-item details[open] summary::after {
+	content: "Ocultar questão ▴";
+}
+
+.enem-simulator .review-item summary:focus-visible {
+	outline: 3px solid rgb(23 102 255 / 28%);
+	outline-offset: 2px;
+	border-radius: 8px;
+}
+
+.enem-simulator .review-item-title {
+	color: #1f2933;
+	font-size: 15px;
+	font-weight: 700;
+}
+
+.enem-simulator .review-status {
+	padding: 3px 10px;
+	border-radius: 999px;
+	color: var(--status-color);
+	background: var(--status-bg);
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.enem-simulator .review-item-source,
+.enem-simulator .review-item-answer {
+	grid-column: 1 / -1;
+	color: var(--exam-muted);
+	font-size: 13px;
+}
+
+.enem-simulator .review-item-answer {
+	color: #344054;
+	font-weight: 600;
+}
+
+.enem-simulator .review-item-body {
+	display: grid;
+	gap: 16px;
+	padding: 4px 16px 18px;
+	border-top: 1px solid var(--exam-border);
+}
+
+.enem-simulator .review-statement {
+	margin: 12px 0 0;
+	font-size: 15px;
+	font-weight: 500;
+	line-height: 1.65;
+}
+
+.enem-simulator .review-choices {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.enem-simulator .review-choice {
+	display: grid;
+	grid-template-columns: 32px minmax(0, 1fr);
+	gap: 4px 12px;
+	align-items: start;
+	padding: 12px 14px;
+	border: 1px solid var(--exam-border);
+	border-radius: 9px;
+	background: #fff;
+}
+
+.enem-simulator .review-choice-text {
+	padding-top: 4px;
+	color: #394455;
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+.enem-simulator .review-choice-tag {
+	grid-column: 2;
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.enem-simulator .review-choice[data-mark="correct"] {
+	border-color: #75e0a7;
+	background: #ecfdf3;
+}
+
+.enem-simulator .review-choice[data-mark="correct"] .answer-letter {
+	border-color: #067647;
+	color: #fff;
+	background: #067647;
+}
+
+.enem-simulator .review-choice[data-mark="correct"] .review-choice-tag {
+	color: #067647;
+}
+
+.enem-simulator .review-choice[data-mark="wrong"] {
+	border-color: #fda29b;
+	background: #fef3f2;
+}
+
+.enem-simulator .review-choice[data-mark="wrong"] .answer-letter {
+	border-color: #b42318;
+	color: #fff;
+	background: #b42318;
+}
+
+.enem-simulator .review-choice[data-mark="wrong"] .review-choice-tag {
+	color: #b42318;
+}
+
 .enem-simulator .area-insights {
 	margin: 0;
 	padding: 13px 15px;
@@ -570,6 +1048,20 @@
 }
 
 @media (max-width: 760px) {
+	.enem-simulator .duration-options {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.enem-simulator .area-review {
+		padding: 16px;
+	}
+
+	.enem-simulator .review-item summary,
+	.enem-simulator .review-item-body {
+		padding-right: 12px;
+		padding-left: 12px;
+	}
+
 	.enem-simulator .dashboard-header {
 		min-height: 68px;
 		padding: 0 20px;

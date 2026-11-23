@@ -1,10 +1,6 @@
+// QUESTION_AREAS, parseQuestionFile, parseAnswerKey e classifyDifficulty vêm de parser.js.
 const MINUTES_PER_QUESTION = 4;
-const QUESTION_AREAS = [
-	"Linguagens",
-	"Ciências humanas",
-	"Ciências da natureza",
-	"Matemática",
-];
+const IMAGE_BASE_PATH = "../assets/imagens/";
 
 function questionCountForDuration(durationMinutes) {
 	return Math.floor(durationMinutes / MINUTES_PER_QUESTION);
@@ -78,7 +74,6 @@ async function initializeSimulator() {
 	const configForm = document.querySelector("#exam-config");
 	const subjectField = document.querySelector("#subject-field");
 	const subjectSelect = document.querySelector("#subject-select");
-	const durationSelect = document.querySelector("#duration-select");
 	const loadStatus = document.querySelector("#load-status");
 	const startButton = document.querySelector("#start-exam");
 	const answers = new Map();
@@ -87,155 +82,20 @@ async function initializeSimulator() {
 	let remainingSeconds = 0;
 	let timerInterval;
 
-	function normalizeText(text) {
-		return text.replace(/\s+/g, " ").trim();
-	}
-
-	function isExamMetadataLine(line) {
-		return /^\s*-{5,}\s*$/.test(line)
-			|| /^\s*(?:TEXTO\s+PARA\s+AS?\s+)?QUEST(?:Õ|O)ES\s+DE\b/i.test(line)
-			|| /^\s*(?:LINGUAGENS(?:,\s*C[ÓO]DIGOS)?|CI[ÊE]NCIAS\s+HUMANAS|CI[ÊE]NCIAS\s+DA\s+NATUREZA|MATEM[ÁA]TICA)(?:\s+E(?:\s+SUAS)?(?:\s+TECNOLOGIAS)?)?\s*$/i.test(line)
-			|| /^\s*(?:E\s+)?SUAS(?:\s+TECNOLOGIAS)?\.?\s*$/i.test(line)
-			|| /^\s*(?:OP[CÇ][AÃ]O\s+(?:INGLÊS|ESPANHOL)|DIA\s+\d+|PROVA\s+DIA\s+\d+\b.*)$/i.test(line)
-			|| /^\s*TECNOLOGIAS\s*$/i.test(line);
-	}
-
-	function areaFromHeading(text, offset, questionNumber) {
-		const beforeQuestion = text.slice(0, offset);
-		const areaPatterns = [
-			{ name: "Linguagens", pattern: /^\s*LINGUAGENS,?\s*C[ÓO]DIGOS\b/gim },
-			{ name: "Ciências humanas", pattern: /^\s*CI[ÊE]NCIAS\s+HUMANAS\b/gim },
-			{ name: "Ciências da natureza", pattern: /^\s*CI[ÊE]NCIAS\s+DA\s+NATUREZA\b/gim },
-			{ name: "Matemática", pattern: /^\s*MATEM[ÁA]TICA\b/gim },
-		];
-		let latestArea;
-		let latestPosition = -1;
-
-		areaPatterns.forEach(({ name, pattern }) => {
-			for (const match of beforeQuestion.matchAll(pattern)) {
-				if (match.index > latestPosition) {
-					latestPosition = match.index;
-					latestArea = name;
-				}
-			}
-		});
-
-		if (latestArea) {
-			return latestArea;
+	async function loadImageIndex() {
+		try {
+			const response = await fetch(IMAGE_BASE_PATH + "indice.json");
+			if (!response.ok) throw new Error(`HTTP ${response.status}`);
+			return new Set(await response.json());
+		} catch (error) {
+			// Sem índice, as questões com imagem ficam de fora, como antes.
+			console.warn("Índice de imagens indisponível; questões com imagem serão omitidas.", error);
+			return new Set();
 		}
-		if (questionNumber <= 45) return "Linguagens";
-		if (questionNumber <= 90) return "Ciências humanas";
-		if (questionNumber <= 135) return "Ciências da natureza";
-		return "Matemática";
-	}
-
-	function parseAnswerKey(text) {
-		const answersByNumber = new Map();
-		for (const match of text.matchAll(/^\s*(\d{1,3})\s+([A-E])(?:\s+([A-E]))?/gim)) {
-			const number = Number(match[1]);
-			const answers = answersByNumber.get(number) || [];
-			answers.push(...[match[2], match[3]].filter(Boolean).map((answer) => answer.toUpperCase()));
-			answersByNumber.set(number, answers);
-		}
-		return answersByNumber;
-	}
-
-	function parseChoices(lines) {
-		const candidates = [];
-		lines.forEach((line, index) => {
-			const match = line.trim().match(/^([A-E])(?:[.)]\s*|\s+)(\S.*)$/);
-			if (match) {
-				candidates.push({ letter: match[1], text: match[2], index });
-			}
-		});
-
-		let bestSequence;
-		candidates.forEach((candidate, start) => {
-			if (candidate.letter !== "A") return;
-			const sequence = [candidate];
-			let nextLetterIndex = 1;
-			for (let index = start + 1; index < candidates.length && nextLetterIndex < 5; index += 1) {
-				if (candidates[index].letter === "ABCDE"[nextLetterIndex]) {
-					sequence.push(candidates[index]);
-					nextLetterIndex += 1;
-				}
-			}
-			if (sequence.length === 5 && (!bestSequence
-				|| sequence[4].index - sequence[0].index < bestSequence[4].index - bestSequence[0].index)) {
-				bestSequence = sequence;
-			}
-		});
-
-		if (!bestSequence) return null;
-		const choices = bestSequence.map((choice, index) => {
-			const end = bestSequence[index + 1]?.index ?? lines.length;
-			const continuation = lines.slice(choice.index + 1, end).join(" ");
-			return {
-				letter: choice.letter,
-				text: normalizeText(`${choice.text} ${continuation}`),
-			};
-		});
-		return choices.every((choice) => choice.text)
-			? { choices, firstChoiceIndex: bestSequence[0].index }
-			: null;
-	}
-
-	function parseQuestionFile(text, year, answerKey) {
-		const marker = /^\s*(?:QUEST(?:ÃO|AO)\s*0*(\d{1,3})|0*(\d{1,3})\s+QUEST(?:ÃO|AO))\b.*$/gim;
-		const headers = [...text.matchAll(marker)];
-		const questions = [];
-		const seenNumbers = new Set();
-		const occurrences = new Map();
-
-		headers.forEach((header, index) => {
-			const number = Number(header[1] || header[2]);
-			if (!number || seenNumbers.has(number)) return;
-			const occurrence = occurrences.get(number) || 0;
-			occurrences.set(number, occurrence + 1);
-			const start = header.index + header[0].length;
-			const end = headers[index + 1]?.index ?? text.length;
-			const rawLines = text.slice(start, end).split(/\r?\n/);
-			const imageNotice = /\b(?:tem|cont[ée]m|contendo)\s+(?:uma\s+)?imagem|\(\s*(?:in?magem|tem\s+imagem|imagem\s+nas\s+respostas)\b|\bimagem\s+nas\s+respostas\b/i;
-			if (imageNotice.test(header[0]) || imageNotice.test(rawLines.join("\n"))) return;
-			const lines = rawLines
-				.filter((line) => !isExamMetadataLine(line))
-				.map((line) => line.replace(/-{5,}=?/g, ""));
-
-			const parsedChoices = parseChoices(lines);
-			const possibleAnswers = answerKey.get(number) || [];
-			const correctAnswer = possibleAnswers[Math.min(occurrence, possibleAnswers.length - 1)];
-			if (!parsedChoices || !correctAnswer
-				|| !parsedChoices.choices.some((choice) => choice.letter === correctAnswer)) return;
-
-			const statement = normalizeText(lines.slice(0, parsedChoices.firstChoiceIndex).join(" "));
-			if (!statement) return;
-
-			questions.push({
-				id: `${year}-${number}`,
-				year,
-				number,
-				area: areaFromHeading(text, header.index, number),
-				statement,
-				choices: parsedChoices.choices,
-				correctAnswer,
-				difficulty: "Média",
-				complexity: `${statement} ${parsedChoices.choices.map((choice) => choice.text).join(" ")}`.split(/\s+/).length,
-			});
-			seenNumbers.add(number);
-		});
-
-		return questions;
-	}
-
-	function classifyDifficulty(questions) {
-		const sorted = [...questions].sort((first, second) => first.complexity - second.complexity);
-		sorted.forEach((question, index) => {
-			const percentile = index / Math.max(sorted.length, 1);
-			question.difficulty = percentile < 0.3 ? "Fácil" : percentile < 0.7 ? "Média" : "Difícil";
-		});
 	}
 
 	async function loadQuestionBank() {
+		const images = await loadImageIndex();
 		const files = await Promise.all(questionYears.map(async (year) => {
 			const [questionResponse, answerResponse] = await Promise.all([
 				fetch(`../dados/provas/prova-${year}`),
@@ -248,13 +108,16 @@ async function initializeSimulator() {
 				questionResponse.text(),
 				answerResponse.text(),
 			]);
-			return parseQuestionFile(questionText, year, parseAnswerKey(answerText));
+			return parseQuestionFile(questionText, year, parseAnswerKey(answerText), {
+				images,
+				imageBasePath: IMAGE_BASE_PATH,
+			});
 		}));
 
 		files.forEach((questions) => questionBank.push(...questions));
 		classifyDifficulty(questionBank);
 		if (!questionBank.length) {
-			throw new Error("Nenhuma questão sem aviso de imagem e com alternativas e gabarito disponíveis foi encontrada.");
+			throw new Error("Nenhuma questão com alternativas e gabarito disponíveis foi encontrada.");
 		}
 	}
 
@@ -263,8 +126,12 @@ async function initializeSimulator() {
 		return questionBank.filter((question) => scope === "all" || question.area === subjectSelect.value);
 	}
 
+	function selectedDurationInput() {
+		return configForm.querySelector('input[name="duration"]:checked');
+	}
+
 	function selectedDurationMinutes() {
-		return Number(durationSelect.value);
+		return Number(selectedDurationInput().value);
 	}
 
 	function updateEstimate() {
@@ -274,9 +141,8 @@ async function initializeSimulator() {
 		const availableCount = questionBank.length ? pool.length : requestedCount;
 		const count = Math.min(requestedCount, availableCount);
 		const distribution = balancedQuestionCounts(pool, count);
-		const selectedOption = durationSelect.selectedOptions[0];
 		document.querySelector("#question-estimate").innerHTML =
-			`<strong>${count} questões</strong> <span>·</span> ${selectedOption.textContent}`;
+			`<strong>${count} questões</strong> <span>·</span> ${selectedDurationInput().dataset.label}`;
 		document.querySelector("#question-distribution").textContent = questionBank.length
 			? QUESTION_AREAS
 				.filter((area) => distribution.get(area) > 0)
@@ -365,15 +231,34 @@ async function initializeSimulator() {
 
 		document.querySelector("#area-results").replaceChildren(...areaResults.map(({ area, total, correct, percentage }) => {
 			const item = document.createElement("li");
-			item.className = "area-result-item";
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = "area-result-item";
+			button.dataset.area = area;
+			button.disabled = !total;
+			button.setAttribute("aria-pressed", "false");
+			button.setAttribute("aria-controls", "area-review");
 			const heading = document.createElement("span");
 			heading.className = "area-result-name";
 			heading.textContent = area;
 			const score = document.createElement("strong");
 			score.textContent = total ? `${percentage}%` : "Sem questões";
 			const detail = document.createElement("small");
-			detail.textContent = total ? `${correct} de ${total} acertos` : "Esta área não foi incluída";
-			item.append(heading, score, detail);
+			if (total) {
+				const { wrong, blank } = reviewCounts(area);
+				const misses = [wrong && `${wrong} errada${wrong > 1 ? "s" : ""}`, blank && `${blank} em branco`].filter(Boolean);
+				detail.textContent = `${correct} de ${total} acertos${misses.length ? ` · ${misses.join(" · ")}` : ""}`;
+				const action = document.createElement("span");
+				action.className = "area-result-action";
+				action.setAttribute("aria-hidden", "true");
+				action.textContent = "Ver questões →";
+				button.append(heading, score, detail, action);
+				button.addEventListener("click", () => openAreaReview(area));
+			} else {
+				detail.textContent = "Esta área não foi incluída";
+				button.append(heading, score, detail);
+			}
+			item.append(button);
 			return item;
 		}));
 
@@ -394,6 +279,27 @@ async function initializeSimulator() {
 		insights.textContent = `Seu melhor resultado: ${strongestAreas.join(", ")} (${best}%). Para estudar mais: ${areasToReview.join(", ")} (${needsWork}%).`;
 	}
 
+	// Enunciado (texto, texto-base compartilhado e imagem) como nós DOM.
+	function statementNodes(question) {
+		return question.statementBlocks.map((block) => {
+			if (block.type === "image") {
+				const figure = document.createElement("figure");
+				figure.className = "question-figure";
+				const image = document.createElement("img");
+				image.src = block.src;
+				image.alt = `Imagem da questão ${question.number} da prova ${question.year}`;
+				image.loading = "lazy";
+				image.decoding = "async";
+				figure.append(image);
+				return figure;
+			}
+			const paragraph = document.createElement("p");
+			if (block.shared) paragraph.className = "question-shared-text";
+			paragraph.textContent = block.text;
+			return paragraph;
+		});
+	}
+
 	function renderQuestion() {
 		const question = examQuestions[currentIndex];
 		document.querySelector("#current-number").textContent = currentIndex + 1;
@@ -402,7 +308,7 @@ async function initializeSimulator() {
 		document.querySelector("#difficulty-badge").dataset.difficulty = question.difficulty.toLowerCase();
 		document.querySelector("#question-source").textContent =
 			`${question.area} · Prova ${question.year} · Questão ${String(question.number).padStart(2, "0")}`;
-		document.querySelector("#question-statement").textContent = question.statement;
+		document.querySelector("#question-statement").replaceChildren(...statementNodes(question));
 		document.querySelector("#answer-options").replaceChildren(...question.choices.map((choice) => {
 			const label = document.createElement("label");
 			label.className = "answer-option";
@@ -422,14 +328,291 @@ async function initializeSimulator() {
 			return label;
 		}));
 		document.querySelector("#previous-question").disabled = currentIndex === 0;
-		document.querySelector("#next-question").hidden = currentIndex === examQuestions.length - 1;
+		// Na última questão o botão de avançar vira "Finalizar simulado".
+		const isLastQuestion = currentIndex === examQuestions.length - 1;
+		const nextButton = document.querySelector("#next-question");
+		nextButton.replaceChildren(isLastQuestion ? "Finalizar simulado " : "Próxima questão ");
+		const arrow = document.createElement("span");
+		arrow.setAttribute("aria-hidden", "true");
+		arrow.textContent = "→";
+		nextButton.append(arrow);
 	}
+
+	// =============================================
+	// REVISÃO POR ÁREA (tela de resultado)
+	// =============================================
+
+	const REVIEW_FILTERS = [
+		{ id: "wrong", label: "Erradas", empty: "Você não errou nenhuma questão respondida nesta área." },
+		{ id: "blank", label: "Em branco", empty: "Você respondeu todas as questões desta área." },
+		{ id: "all", label: "Todas", empty: "Não há questões desta área no simulado." },
+	];
+	const STATUS_LABELS = { correct: "Certa", wrong: "Errada", blank: "Em branco" };
+	let reviewState = { area: null, filter: "wrong" };
+
+	function questionStatus(question) {
+		const answer = answers.get(question.id);
+		if (!answer) return "blank";
+		return answer === question.correctAnswer ? "correct" : "wrong";
+	}
+
+	function reviewCounts(area) {
+		const areaQuestions = examQuestions.filter((question) => question.area === area);
+		const count = (status) => areaQuestions.filter((question) => questionStatus(question) === status).length;
+		return { wrong: count("wrong"), blank: count("blank"), all: areaQuestions.length };
+	}
+
+	function openAreaReview(area) {
+		const counts = reviewCounts(area);
+		// Abre em "Erradas"; se não houver erros, mostra as em branco; senão, todas.
+		const filter = counts.wrong ? "wrong" : counts.blank ? "blank" : "all";
+		reviewState = { area, filter };
+		renderAreaReview();
+		const review = document.querySelector("#area-review");
+		review.scrollIntoView({ behavior: "smooth", block: "start" });
+		document.querySelector("#area-review-heading").focus({ preventScroll: true });
+	}
+
+	function closeAreaReview() {
+		const previousArea = reviewState.area;
+		reviewState = { area: null, filter: "wrong" };
+		document.querySelector("#area-review").hidden = true;
+		document.querySelectorAll(".area-result-item").forEach((button) => button.setAttribute("aria-pressed", "false"));
+		document.querySelector(`.area-result-item[data-area="${previousArea}"]`)?.focus();
+	}
+
+	function renderAreaReview() {
+		const { area, filter } = reviewState;
+		const review = document.querySelector("#area-review");
+		review.hidden = false;
+		document.querySelectorAll(".area-result-item").forEach((button) => {
+			button.setAttribute("aria-pressed", String(button.dataset.area === area));
+		});
+
+		const heading = document.querySelector("#area-review-heading");
+		heading.textContent = `Questões de ${area}`;
+		heading.tabIndex = -1;
+
+		const counts = reviewCounts(area);
+		document.querySelector("#review-filters").replaceChildren(...REVIEW_FILTERS.map(({ id, label }) => {
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = "review-filter";
+			button.setAttribute("aria-pressed", String(id === filter));
+			button.textContent = `${label} (${counts[id]})`;
+			button.addEventListener("click", () => {
+				reviewState.filter = id;
+				renderAreaReview();
+			});
+			return button;
+		}));
+
+		const items = examQuestions
+			.map((question, index) => ({ question, position: index + 1, status: questionStatus(question) }))
+			.filter(({ question, status }) => question.area === area && (filter === "all" || status === filter));
+
+		const empty = document.querySelector("#review-empty");
+		empty.hidden = items.length > 0;
+		empty.textContent = REVIEW_FILTERS.find(({ id }) => id === filter).empty;
+		document.querySelector("#review-list").replaceChildren(...items.map(reviewItem));
+	}
+
+	function reviewItem({ question, position, status }) {
+		const answer = answers.get(question.id);
+		const item = document.createElement("li");
+		item.className = "review-item";
+		item.dataset.status = status;
+
+		const details = document.createElement("details");
+		const summary = document.createElement("summary");
+		const title = document.createElement("span");
+		title.className = "review-item-title";
+		title.textContent = `Questão ${position} do simulado`;
+		const source = document.createElement("span");
+		source.className = "review-item-source";
+		source.textContent = `Prova ${question.year} · Questão ${String(question.number).padStart(2, "0")}${question.language ? ` (${question.language})` : ""}`;
+		const badge = document.createElement("span");
+		badge.className = "review-status";
+		badge.textContent = STATUS_LABELS[status];
+		const answerLine = document.createElement("span");
+		answerLine.className = "review-item-answer";
+		answerLine.textContent = `Sua resposta: ${answer || "—"} · Correta: ${question.correctAnswer}`;
+		summary.append(title, badge, source, answerLine);
+
+		const body = document.createElement("div");
+		body.className = "review-item-body";
+		const statement = document.createElement("div");
+		statement.className = "question-statement review-statement";
+		statement.append(...statementNodes(question));
+		const choices = document.createElement("ul");
+		choices.className = "review-choices";
+		choices.setAttribute("aria-label", "Alternativas");
+		choices.append(...question.choices.map((choice) => {
+			const row = document.createElement("li");
+			row.className = "review-choice";
+			const isCorrect = choice.letter === question.correctAnswer;
+			const isChosen = choice.letter === answer;
+			if (isCorrect) row.dataset.mark = "correct";
+			else if (isChosen) row.dataset.mark = "wrong";
+			const letter = document.createElement("span");
+			letter.className = "answer-letter";
+			letter.textContent = choice.letter;
+			const text = document.createElement("span");
+			text.className = "review-choice-text";
+			text.textContent = choice.text;
+			row.append(letter, text);
+			const tags = [isChosen && "Sua resposta", isCorrect && "Resposta correta"].filter(Boolean);
+			if (tags.length) {
+				const tag = document.createElement("span");
+				tag.className = "review-choice-tag";
+				tag.textContent = tags.join(" · ");
+				row.append(tag);
+			}
+			return row;
+		}));
+		body.append(statement, choices);
+		details.append(summary, body);
+		item.append(details);
+		return item;
+	}
+
+	document.querySelector("#area-review-close").addEventListener("click", closeAreaReview);
+
+	// =============================================
+	// PENALIDADE POR SAIR DA TELA DA PROVA
+	// 1ª saída: advertência. 2ª saída: a prova é encerrada.
+	// "Sair" = o mouse deixar a página por mais de LEAVE_GRACE_MS, ou a janela
+	// perder o foco / a aba ficar oculta (troca de aba, Alt+Tab, celular).
+	// Uma saída só é contada de novo depois que o aluno volta à página.
+	// =============================================
+
+	const MAX_VIOLATIONS = 2;
+	const LEAVE_GRACE_MS = 400;
+	const examWarning = document.querySelector("#exam-warning");
+	const examWarningButton = document.querySelector("#exam-warning-ok");
+	let examRunning = false;
+	let violations = 0;
+	let endedByPenalty = false;
+	let isOutside = false;
+	let leaveTimer = null;
+	// Entrar/sair da tela cheia pode disparar mouseout/blur na transição: ignora por um instante.
+	const FULLSCREEN_SETTLE_MS = 1000;
+	let ignoreExitsUntil = 0;
+
+	function fullscreenElement() {
+		return document.fullscreenElement || document.webkitFullscreenElement || null;
+	}
+
+	function enterFullscreen() {
+		const root = document.documentElement;
+		const request = root.requestFullscreen || root.webkitRequestFullscreen;
+		if (!request || fullscreenElement()) return;
+		ignoreExitsUntil = Date.now() + FULLSCREEN_SETTLE_MS;
+		try {
+			// Navegadores sem suporte (ex.: Safari no iPhone) ou que recusem seguem sem tela cheia.
+			Promise.resolve(request.call(root)).catch(() => {});
+		} catch {
+			// idem
+		}
+	}
+
+	function exitFullscreen() {
+		if (!fullscreenElement()) return;
+		const exit = document.exitFullscreen || document.webkitExitFullscreen;
+		try {
+			Promise.resolve(exit?.call(document)).catch(() => {});
+		} catch {
+			// já saiu
+		}
+	}
+
+	function resetPenalties() {
+		violations = 0;
+		endedByPenalty = false;
+		isOutside = false;
+		window.clearTimeout(leaveTimer);
+		examWarning.hidden = true;
+		document.querySelector("#penalty-badge").hidden = true;
+	}
+
+	function registerExit() {
+		window.clearTimeout(leaveTimer);
+		// Enquanto a advertência está aberta, o aluno precisa confirmar antes de nova contagem.
+		if (!examRunning || isOutside || !examWarning.hidden || Date.now() < ignoreExitsUntil) return;
+		isOutside = true;
+		violations += 1;
+		if (violations >= MAX_VIOLATIONS) {
+			endedByPenalty = true;
+			finishExam();
+			return;
+		}
+		const badge = document.querySelector("#penalty-badge");
+		badge.textContent = `${violations} advertência${violations > 1 ? "s" : ""}`;
+		badge.hidden = false;
+		examWarning.hidden = false;
+		examWarningButton.focus();
+	}
+
+	function registerReturn() {
+		window.clearTimeout(leaveTimer);
+		isOutside = false;
+	}
+
+	// Mouse saindo da página: mouseout sem elemento de destino = o ponteiro deixou a janela.
+	document.addEventListener("mouseout", (event) => {
+		if (!examRunning || event.relatedTarget) return;
+		// Passar para a barra de rolagem também dispara mouseout sem destino; não conta como saída.
+		const root = document.documentElement;
+		const onVerticalScrollbar = event.clientX >= root.clientWidth && event.clientX < window.innerWidth;
+		const onHorizontalScrollbar = event.clientY >= root.clientHeight && event.clientY < window.innerHeight;
+		if (onVerticalScrollbar || onHorizontalScrollbar) return;
+		window.clearTimeout(leaveTimer);
+		leaveTimer = window.setTimeout(registerExit, LEAVE_GRACE_MS);
+	});
+	document.addEventListener("mouseover", () => {
+		if (examRunning && document.hasFocus()) registerReturn();
+		else window.clearTimeout(leaveTimer);
+	});
+	window.addEventListener("blur", () => {
+		if (examRunning) registerExit();
+	});
+	window.addEventListener("focus", registerReturn);
+	document.addEventListener("visibilitychange", () => {
+		if (!examRunning) return;
+		if (document.hidden) registerExit();
+		else registerReturn();
+	});
+	// Fechar a tela cheia (Esc, F11) durante a prova também conta como sair da tela.
+	const onFullscreenChange = () => {
+		if (examRunning && !fullscreenElement()) registerExit();
+	};
+	document.addEventListener("fullscreenchange", onFullscreenChange);
+	document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+
+	examWarningButton.addEventListener("click", () => {
+		examWarning.hidden = true;
+		registerReturn();
+		enterFullscreen(); // volta para a tela cheia (o clique permite)
+		document.querySelector("#answer-options input:checked, #answer-options input")?.focus({ preventScroll: true });
+	});
 
 	function finishExam() {
 		window.clearInterval(timerInterval);
+		examRunning = false;
+		window.clearTimeout(leaveTimer);
+		examWarning.hidden = true;
+		exitFullscreen();
+		const penalty = document.querySelector("#result-penalty");
+		penalty.hidden = !violations;
+		penalty.dataset.ended = String(endedByPenalty);
+		penalty.textContent = endedByPenalty
+			? "Prova encerrada automaticamente: você saiu da tela da prova pela segunda vez. As questões não respondidas até aquele momento foram contadas como em branco."
+			: "Você recebeu 1 advertência por sair da tela da prova durante o simulado.";
 		setupPanel.hidden = true;
 		runPanel.hidden = true;
 		resultPanel.hidden = false;
+		reviewState = { area: null, filter: "wrong" };
+		document.querySelector("#area-review").hidden = true;
 
 		const areaResults = calculateAreaResults(examQuestions, answers);
 		renderAreaRadar(areaResults);
@@ -451,7 +634,7 @@ async function initializeSimulator() {
 	function startExam() {
 		const pool = selectedPool();
 		if (!pool.length) {
-			loadStatus.textContent = "Não há questões disponíveis para essa matéria no acervo sem imagens.";
+			loadStatus.textContent = "Não há questões disponíveis para essa matéria no acervo.";
 			loadStatus.hidden = false;
 			return;
 		}
@@ -467,6 +650,8 @@ async function initializeSimulator() {
 		currentIndex = 0;
 		setupPanel.hidden = true;
 		runPanel.hidden = false;
+		resetPenalties();
+		examRunning = true;
 		document.querySelector("#run-kicker").textContent = configForm.elements.scope.value === "all"
 			? "SIMULADO COMPLETO"
 			: `SIMULADO · ${subjectSelect.value.toUpperCase()}`;
@@ -485,14 +670,42 @@ async function initializeSimulator() {
 		});
 	});
 	configForm.addEventListener("change", updateEstimate);
+	// Modal de confirmação antes de iniciar; ao confirmar, a prova entra em tela cheia.
+	const startDialog = document.querySelector("#start-dialog");
+	const startDialogConfirm = document.querySelector("#start-dialog-confirm");
+
+	function closeStartDialog() {
+		startDialog.hidden = true;
+		startButton.focus();
+	}
+
 	configForm.addEventListener("submit", (event) => {
 		event.preventDefault();
+		if (!selectedPool().length) {
+			startExam(); // mostra a mensagem de "sem questões" sem abrir o modal
+			return;
+		}
+		startDialog.hidden = false;
+		startDialogConfirm.focus();
+	});
+	document.querySelector("#start-dialog-cancel").addEventListener("click", closeStartDialog);
+	startDialog.addEventListener("click", (event) => {
+		if (event.target === startDialog) closeStartDialog();
+	});
+	startDialog.addEventListener("keydown", (event) => {
+		if (event.key === "Escape") closeStartDialog();
+	});
+	startDialogConfirm.addEventListener("click", () => {
+		startDialog.hidden = true;
+		enterFullscreen(); // precisa acontecer dentro do clique (gesto do usuário)
 		startExam();
 	});
 	document.querySelector("#next-question").addEventListener("click", () => {
 		if (currentIndex < examQuestions.length - 1) {
 			currentIndex += 1;
 			renderQuestion();
+		} else {
+			finishExam();
 		}
 	});
 	document.querySelector("#previous-question").addEventListener("click", () => {
@@ -508,7 +721,8 @@ async function initializeSimulator() {
 		startButton.disabled = false;
 		startButton.textContent = "Começar simulado";
 		startButton.insertAdjacentHTML("beforeend", ' <span aria-hidden="true">&#8594;</span>');
-		loadStatus.textContent = `${questionBank.length} questões disponíveis sem indicação de imagem.`;
+		const withImage = questionBank.filter((question) => question.image).length;
+		loadStatus.textContent = `${questionBank.length} questões disponíveis (${withImage} com imagem).`;
 		loadStatus.hidden = false;
 		updateEstimate();
 	}).catch((error) => {

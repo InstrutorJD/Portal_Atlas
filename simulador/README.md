@@ -18,4 +18,4 @@ Este diretório contém a experiência de prova e a lógica usada pela rota do s
 
 Acesse o portal em `../portal/index.html`, entre com sua conta e escolha **Configurar prova** na página inicial. A rota `../portal/simulado.html` encaminha para a tela do simulado. Sirva o repositório por HTTP para permitir o carregamento dos arquivos locais.
 
-O parser desconsidera cabeçalhos de área, faixas de numeração das questões e linhas separadoras ao montar os enunciados e alternativas. O desempenho mostrado é uma contagem de acertos, não uma nota TRI oficial do ENEM. Questões com indicação de imagem são omitidas quando o parser identifica essa indicação.
+O parser (`parser.js`, compartilhado com as ferramentas em `../dados/ferramentas/`) define a área pelo número da questão conforme a ordem da prova de cada ano (até 2016 o 1º dia era Humanas e Natureza). Questões anuladas no gabarito são ignoradas. Questões com `(tem imagem)` são exibidas com a figura quando ela consta em `../assets/imagens/indice.json`; caso contrário, ou se as alternativas forem imagens, são omitidas. O desempenho mostrado é uma contagem de acertos, não uma nota TRI oficial do ENEM.

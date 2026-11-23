@@ -12,6 +12,7 @@
 	<link rel="stylesheet" href="simulado.css">
 	<script src="../portal/supabase-cdn.js"></script>
 	<script src="../portal/supabase.js"></script>
+	<script src="parser.js" defer></script>
 	<script src="simulado.js" defer></script>
 </head>
 <body class="enem-simulator">
@@ -61,22 +62,28 @@
 					<div>
 						<p class="dashboard-kicker">TEMPO E DISTRIBUIÇÃO</p>
 						<h2>Como quer praticar?</h2>
-						<p>Os treinos curtos são versões reduzidas. Para uma prova completa, reserve no mínimo 4 horas; a prática real de 90 questões dura 6 horas.</p>
 					</div>
-					<div class="duration-fields">
-						<div class="field-group">
-							<label for="duration-select">Duração da prova</label>
-							<select id="duration-select" name="duration" aria-label="Duração da prova">
-								<option value="30">Treino Rápido 30min · 7 questões</option>
-								<option value="120">Treino 2h · 30 questões</option>
-								<option value="360" selected>Prática Real 6h · 90 questões</option>
-							</select>
-						</div>
-					</div>
+					<fieldset class="exam-fieldset duration-options">
+						<legend>Duração da prova</legend>
+						<label class="choice-card">
+							<input type="radio" name="duration" value="30" data-label="Treino Rápido 30min">
+							<span class="choice-card-content"><strong>Treino Rápido</strong><small>30 minutos · 7 questões</small></span>
+							<span class="choice-radio" aria-hidden="true"></span>
+						</label>
+						<label class="choice-card">
+							<input type="radio" name="duration" value="120" data-label="Treino 2h">
+							<span class="choice-card-content"><strong>Treino</strong><small>2 horas · 30 questões</small></span>
+							<span class="choice-radio" aria-hidden="true"></span>
+						</label>
+						<label class="choice-card">
+							<input type="radio" name="duration" value="360" data-label="Prática Real 6h" checked>
+							<span class="choice-card-content"><strong>Prática Real</strong><small>6 horas · 90 questões</small></span>
+							<span class="choice-radio" aria-hidden="true"></span>
+						</label>
+					</fieldset>
 					<p class="question-estimate" id="question-estimate" aria-live="polite">90 questões <span>·</span> Prática Real 6h</p>
 					<p class="question-distribution" id="question-distribution" aria-live="polite">Linguagens: 23 · Ciências humanas: 23 · Ciências da natureza: 22 · Matemática: 22</p>
 				</div>
-				<div class="exam-note"><span aria-hidden="true">i</span><p>Por enquanto, questões com indicação de imagem são retiradas do simulado. As dificuldades exibidas são estimativas, não classificações oficiais do ENEM.</p></div>
 				<p class="form-status exam-status" id="load-status" role="status" aria-live="polite" hidden></p>
 				<button class="submit-button start-exam-button" id="start-exam" type="submit" disabled>Carregando questões <span aria-hidden="true">&#8594;</span></button>
 			</form>
@@ -87,9 +94,9 @@
 				<div><p class="dashboard-kicker" id="run-kicker">SIMULADO EM ANDAMENTO</p><h1 id="run-heading">Questão <span id="current-number">1</span></h1></div>
 				<div class="exam-clock" aria-label="Tempo restante"><span aria-hidden="true">◷</span><strong id="timer">06:00:00</strong><small>restantes</small></div>
 			</div>
-			<div class="question-progress"><span id="progress-label">Questão 1 de 90</span><span class="difficulty-badge" id="difficulty-badge">Média estimada</span></div>
+			<div class="question-progress"><span id="progress-label">Questão 1 de 90</span><span class="question-progress-badges"><span class="penalty-badge" id="penalty-badge" hidden>1 advertência</span><span class="difficulty-badge" id="difficulty-badge">Média estimada</span></span></div>
 			<div class="question-source" id="question-source"></div>
-			<p class="question-statement" id="question-statement"></p>
+			<div class="question-statement" id="question-statement"></div>
 			<div class="answer-options" id="answer-options" role="group" aria-label="Alternativas"></div>
 			<div class="question-controls">
 				<button class="secondary-button" id="previous-question" type="button">Questão anterior</button>
@@ -102,11 +109,12 @@
 			<p class="dashboard-kicker">SIMULADO CONCLUÍDO</p>
 			<h1 id="result-heading">Seu resultado</h1>
 			<p class="result-summary" id="result-summary"></p>
+			<p class="result-penalty" id="result-penalty" role="status" hidden></p>
 			<section class="area-analysis" aria-labelledby="area-analysis-heading">
 				<div>
 					<p class="dashboard-kicker">SEU DESEMPENHO</p>
 					<h2 id="area-analysis-heading">Aproveitamento por área</h2>
-					<p class="area-analysis-description">Percentual de acertos nas questões incluídas. Questões em branco contam como não acertadas.</p>
+					<p class="area-analysis-description">Percentual de acertos nas questões incluídas. Questões em branco contam como não acertadas. Clique em uma área para revisar as questões que você errou.</p>
 				</div>
 				<div class="area-analysis-content">
 					<svg class="area-radar" id="area-radar" viewBox="0 0 420 360" role="img" aria-label="Gráfico em teia do aproveitamento por área"></svg>
@@ -114,11 +122,49 @@
 				</div>
 				<p class="area-insights" id="area-insights" aria-live="polite"></p>
 			</section>
+			<section class="area-review" id="area-review" aria-labelledby="area-review-heading" hidden>
+				<div class="area-review-header">
+					<div>
+						<p class="dashboard-kicker">REVISÃO POR ÁREA</p>
+						<h2 id="area-review-heading">Questões</h2>
+					</div>
+					<button class="secondary-button area-review-close" id="area-review-close" type="button">Fechar revisão</button>
+				</div>
+				<div class="review-filters" id="review-filters" role="group" aria-label="Filtrar questões"></div>
+				<p class="review-empty" id="review-empty" hidden></p>
+				<ol class="review-list" id="review-list"></ol>
+			</section>
 			<div class="result-breakdown" id="result-breakdown"></div>
 			<p class="result-note" id="result-note"></p>
 			<a class="submit-button result-home-link" href="../portal/dashboard.html">Voltar ao painel <span aria-hidden="true">&#8594;</span></a>
 		</section>
 		<footer class="dashboard-footer"><span>Portal Atlas</span><span>Preparação que acompanha você.</span></footer>
 	</main>
+
+	<div class="exam-warning exam-start-dialog" id="start-dialog" role="dialog" aria-modal="true" aria-labelledby="start-dialog-title" aria-describedby="start-dialog-text" hidden>
+		<div class="exam-warning-box">
+			<div class="start-dialog-header">
+				<span class="start-dialog-icon" aria-hidden="true">!</span>
+				<div>
+					<p class="dashboard-kicker">ATENÇÃO</p>
+					<h2 id="start-dialog-title">Não saia da tela da prova</h2>
+				</div>
+			</div>
+			<p id="start-dialog-text">A prova abre em tela cheia. Sair dela gera uma advertência; na segunda vez, a prova é encerrada e as questões não respondidas ficam em branco.</p>
+			<div class="dialog-actions">
+				<button class="secondary-button" id="start-dialog-cancel" type="button">Cancelar</button>
+				<button class="submit-button" id="start-dialog-confirm" type="button">Iniciar prova <span aria-hidden="true">&#8594;</span></button>
+			</div>
+		</div>
+	</div>
+
+	<div class="exam-warning" id="exam-warning" role="alertdialog" aria-modal="true" aria-labelledby="exam-warning-title" aria-describedby="exam-warning-text" hidden>
+		<div class="exam-warning-box">
+			<p class="dashboard-kicker">ADVERTÊNCIA 1 DE 2</p>
+			<h2 id="exam-warning-title">Você saiu da tela da prova</h2>
+			<p id="exam-warning-text">Mantenha o mouse dentro da página, não troque de aba ou de janela e não feche a tela cheia até terminar. Se sair da tela novamente, a prova será encerrada e as questões ainda não respondidas serão consideradas em branco.</p>
+			<button class="submit-button" id="exam-warning-ok" type="button">Voltar à prova <span aria-hidden="true">&#8594;</span></button>
+		</div>
+	</div>
 </body>
 </html>
