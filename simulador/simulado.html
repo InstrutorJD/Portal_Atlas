@@ -66,17 +66,17 @@
 					<fieldset class="exam-fieldset duration-options">
 						<legend>Duração da prova</legend>
 						<label class="choice-card">
-							<input type="radio" name="duration" value="30" data-label="Treino Rápido 30min">
+							<input type="radio" name="duration" value="30" data-label="Treino Rápido 30min" data-mode="Treino Rápido">
 							<span class="choice-card-content"><strong>Treino Rápido</strong><small>30 minutos · 7 questões</small></span>
 							<span class="choice-radio" aria-hidden="true"></span>
 						</label>
 						<label class="choice-card">
-							<input type="radio" name="duration" value="120" data-label="Treino 2h">
+							<input type="radio" name="duration" value="120" data-label="Treino 2h" data-mode="Treino">
 							<span class="choice-card-content"><strong>Treino</strong><small>2 horas · 30 questões</small></span>
 							<span class="choice-radio" aria-hidden="true"></span>
 						</label>
 						<label class="choice-card">
-							<input type="radio" name="duration" value="360" data-label="Prática Real 6h" checked>
+							<input type="radio" name="duration" value="360" data-label="Prática Real 6h" data-mode="Prática Real" checked>
 							<span class="choice-card-content"><strong>Prática Real</strong><small>6 horas · 90 questões</small></span>
 							<span class="choice-radio" aria-hidden="true"></span>
 						</label>
@@ -87,6 +87,14 @@
 				<p class="form-status exam-status" id="load-status" role="status" aria-live="polite" hidden></p>
 				<button class="submit-button start-exam-button" id="start-exam" type="submit" disabled>Carregando questões <span aria-hidden="true">&#8594;</span></button>
 			</form>
+			<section class="exam-history" id="exam-history" aria-labelledby="exam-history-heading" hidden>
+				<div class="exam-history-header">
+					<p class="dashboard-kicker">SEU HISTÓRICO</p>
+					<h2 id="exam-history-heading">Simulados anteriores</h2>
+				</div>
+				<p class="exam-history-source" id="exam-history-source"></p>
+				<ol class="exam-history-list" id="exam-history-list"></ol>
+			</section>
 		</section>
 
 		<section class="exam-run-card" id="run-panel" aria-labelledby="run-heading" hidden>
@@ -110,6 +118,7 @@
 			<h1 id="result-heading">Seu resultado</h1>
 			<p class="result-summary" id="result-summary"></p>
 			<p class="result-penalty" id="result-penalty" role="status" hidden></p>
+			<p class="result-saved" id="result-saved" role="status" aria-live="polite" hidden></p>
 			<section class="area-analysis" aria-labelledby="area-analysis-heading">
 				<div>
 					<p class="dashboard-kicker">SEU DESEMPENHO</p>
@@ -154,6 +163,18 @@
 			<div class="dialog-actions">
 				<button class="secondary-button" id="start-dialog-cancel" type="button">Cancelar</button>
 				<button class="submit-button" id="start-dialog-confirm" type="button">Iniciar prova <span aria-hidden="true">&#8594;</span></button>
+			</div>
+		</div>
+	</div>
+
+	<div class="exam-warning exam-finish-dialog" id="finish-dialog" role="alertdialog" aria-modal="true" aria-labelledby="finish-dialog-title" aria-describedby="finish-dialog-text" hidden>
+		<div class="exam-warning-box">
+			<p class="dashboard-kicker">ENCERRAR SIMULADO</p>
+			<h2 id="finish-dialog-title">Há questões em branco</h2>
+			<p id="finish-dialog-text"></p>
+			<div class="dialog-actions">
+				<button class="secondary-button" id="finish-dialog-back" type="button">Ir para a questão em branco</button>
+				<button class="submit-button" id="finish-dialog-confirm" type="button">Encerrar prova <span aria-hidden="true">&#8594;</span></button>
 			</div>
 		</div>
 	</div>

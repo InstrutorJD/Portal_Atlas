@@ -78,6 +78,7 @@ async function initializeSimulator() {
 	const startButton = document.querySelector("#start-exam");
 	const answers = new Map();
 	let examQuestions = [];
+	let examMeta = null;
 	let currentIndex = 0;
 	let remainingSeconds = 0;
 	let timerInterval;
@@ -543,7 +544,7 @@ async function initializeSimulator() {
 		violations += 1;
 		if (violations >= MAX_VIOLATIONS) {
 			endedByPenalty = true;
-			finishExam();
+			finishExam("penalidade");
 			return;
 		}
 		const badge = document.querySelector("#penalty-badge");
@@ -596,9 +597,12 @@ async function initializeSimulator() {
 		document.querySelector("#answer-options input:checked, #answer-options input")?.focus({ preventScroll: true });
 	});
 
-	function finishExam() {
+	// motivo: "manual" (aluno encerrou), "tempo" (relógio zerou) ou "penalidade" (2ª saída da tela).
+	function finishExam(motivo = "manual") {
+		if (!examRunning) return; // evita encerrar (e salvar) duas vezes
 		window.clearInterval(timerInterval);
 		examRunning = false;
+		finishDialog.hidden = true;
 		window.clearTimeout(leaveTimer);
 		examWarning.hidden = true;
 		exitFullscreen();
@@ -629,6 +633,194 @@ async function initializeSimulator() {
 		`;
 		document.querySelector("#result-note").textContent =
 			"Este resultado considera apenas o número de acertos e não representa uma nota TRI oficial do ENEM.";
+
+		saveResult({
+			id: newResultId(),
+			criadoEm: new Date().toISOString(),
+			modalidade: examMeta.modalidade,
+			escopo: examMeta.escopo,
+			duracaoMin: examMeta.duracaoMin,
+			tempoGastoSeg: Math.max(0, examMeta.totalSeconds - Math.max(0, remainingSeconds)),
+			total,
+			acertos: correct,
+			erros: answered - correct,
+			emBranco: total - answered,
+			advertencias: violations,
+			motivo,
+			porArea: areaResults.filter((result) => result.total)
+				.map(({ area, total: areaTotal, correct: areaCorrect }) => ({ area, total: areaTotal, acertos: areaCorrect })),
+			respostas: examQuestions.map((question) => ({
+				questao: question.id,
+				resposta: answers.get(question.id) || null,
+				correta: question.correctAnswer,
+			})),
+		});
+	}
+
+	// =============================================
+	// CONFIRMAÇÃO AO ENCERRAR COM QUESTÕES EM BRANCO
+	// =============================================
+
+	const finishDialog = document.querySelector("#finish-dialog");
+	const finishDialogConfirm = document.querySelector("#finish-dialog-confirm");
+	const finishDialogBack = document.querySelector("#finish-dialog-back");
+
+	function blankQuestionIndexes() {
+		return examQuestions.map((question, index) => (answers.has(question.id) ? -1 : index)).filter((index) => index >= 0);
+	}
+
+	// Usado pelo botão "Encerrar simulado" e por "Finalizar simulado" na última questão.
+	function requestFinish() {
+		if (!examRunning) return;
+		const blanks = blankQuestionIndexes();
+		if (!blanks.length) {
+			finishExam("manual");
+			return;
+		}
+		const count = blanks.length;
+		document.querySelector("#finish-dialog-title").textContent =
+			count === 1 ? "Há 1 questão em branco" : `Há ${count} questões em branco`;
+		const positions = blanks.slice(0, 8).map((index) => index + 1).join(", ") + (count > 8 ? "…" : "");
+		document.querySelector("#finish-dialog-text").textContent =
+			`${count === 1 ? "A questão" : "As questões"} ${positions} ${count === 1 ? "será considerada" : "serão consideradas"} em branco e não ${count === 1 ? "conta" : "contam"} como acerto. Deseja encerrar mesmo assim?`;
+		finishDialogBack.textContent = `Ir para a questão ${blanks[0] + 1}`;
+		finishDialogBack.dataset.target = String(blanks[0]);
+		finishDialog.hidden = false;
+		finishDialogBack.focus();
+	}
+
+	function closeFinishDialog() {
+		finishDialog.hidden = true;
+	}
+
+	finishDialogConfirm.addEventListener("click", () => finishExam("manual"));
+	finishDialogBack.addEventListener("click", () => {
+		closeFinishDialog();
+		currentIndex = Number(finishDialogBack.dataset.target) || 0;
+		renderQuestion();
+		document.querySelector("#answer-options input")?.focus({ preventScroll: true });
+	});
+	finishDialog.addEventListener("keydown", (event) => {
+		if (event.key === "Escape") closeFinishDialog();
+	});
+	finishDialog.addEventListener("click", (event) => {
+		if (event.target === finishDialog) closeFinishDialog();
+	});
+
+	// =============================================
+	// HISTÓRICO: salva cada resultado neste navegador e, com Supabase, na conta do aluno
+	// =============================================
+
+	const HISTORY_LIMIT = 50;
+	const historyKey = `portal_atlas_simulados:${profile?.id || session?.user?.email || "aluno"}`;
+
+	function newResultId() {
+		if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+		return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+			const random = Math.floor(Math.random() * 16);
+			return (char === "x" ? random : (random % 4) + 8).toString(16);
+		});
+	}
+
+	function readLocalHistory() {
+		try {
+			const stored = JSON.parse(localStorage.getItem(historyKey));
+			return Array.isArray(stored) ? stored : [];
+		} catch {
+			return [];
+		}
+	}
+
+	function writeLocalHistory(history) {
+		try {
+			localStorage.setItem(historyKey, JSON.stringify(history.slice(0, HISTORY_LIMIT)));
+			return true;
+		} catch {
+			return false; // armazenamento cheio, bloqueado ou navegação privada
+		}
+	}
+
+	async function saveResult(result) {
+		const notice = document.querySelector("#result-saved");
+		const savedLocally = writeLocalHistory([result, ...readLocalHistory()]);
+		let savedRemotely = false;
+		let remoteFailed = false;
+		if (typeof window.salvarResultadoSimulado === "function") {
+			try {
+				savedRemotely = Boolean(await window.salvarResultadoSimulado(result));
+			} catch (error) {
+				remoteFailed = true;
+				console.error("Não foi possível salvar o resultado no Supabase:", error);
+			}
+		}
+		notice.dataset.state = savedRemotely || savedLocally ? "ok" : "error";
+		if (savedRemotely) notice.textContent = "Resultado salvo na sua conta.";
+		else if (savedLocally) {
+			notice.textContent = remoteFailed
+				? "Resultado salvo neste navegador. Não foi possível enviá-lo à sua conta agora."
+				: "Resultado salvo neste navegador.";
+		} else notice.textContent = "Não foi possível salvar este resultado. Anote seu desempenho antes de sair da página.";
+		notice.hidden = false;
+		renderHistory();
+	}
+
+	async function loadHistory() {
+		const local = readLocalHistory();
+		let remote = null;
+		if (typeof window.listarResultadosSimulado === "function") {
+			try {
+				remote = await window.listarResultadosSimulado(HISTORY_LIMIT);
+			} catch (error) {
+				console.error("Não foi possível carregar o histórico do Supabase:", error);
+			}
+		}
+		const byId = new Map([...(remote || []), ...local].map((result) => [result.id, result]));
+		const history = [...byId.values()].sort((a, b) => String(b.criadoEm).localeCompare(String(a.criadoEm)));
+		return { history, fromAccount: Array.isArray(remote) };
+	}
+
+	function formatDateTime(iso) {
+		const date = new Date(iso);
+		if (Number.isNaN(date.getTime())) return "";
+		return date.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+	}
+
+	function formatDuration(seconds) {
+		if (seconds < 60) return "menos de 1 min";
+		const hours = Math.floor(seconds / 3600);
+		const minutes = Math.floor((seconds % 3600) / 60);
+		return hours ? `${hours}h${String(minutes).padStart(2, "0")}` : `${minutes} min`;
+	}
+
+	async function renderHistory() {
+		const { history, fromAccount } = await loadHistory();
+		const section = document.querySelector("#exam-history");
+		section.hidden = !history.length;
+		if (!history.length) return;
+		document.querySelector("#exam-history-source").textContent = fromAccount
+			? "Seus últimos simulados, salvos na sua conta."
+			: "Seus últimos simulados, salvos neste navegador.";
+		const reasons = { tempo: "Tempo esgotado", penalidade: "Encerrado por sair da tela" };
+		document.querySelector("#exam-history-list").replaceChildren(...history.slice(0, 10).map((result) => {
+			const item = document.createElement("li");
+			item.className = "exam-history-item";
+			if (result.motivo === "penalidade") item.dataset.penalty = "true";
+			const title = document.createElement("strong");
+			title.textContent = `${result.modalidade} · ${result.escopo}`;
+			const score = document.createElement("span");
+			score.className = "exam-history-score";
+			const percent = result.total ? Math.round((result.acertos / result.total) * 100) : 0;
+			score.textContent = `${result.acertos}/${result.total} acertos (${percent}%)`;
+			const meta = document.createElement("small");
+			meta.textContent = [
+				formatDateTime(result.criadoEm),
+				`${formatDuration(result.tempoGastoSeg || 0)} de prova`,
+				result.emBranco ? `${result.emBranco} em branco` : "",
+				reasons[result.motivo] || "",
+			].filter(Boolean).join(" · ");
+			item.append(title, score, meta);
+			return item;
+		}));
 	}
 
 	function startExam() {
@@ -648,19 +840,25 @@ async function initializeSimulator() {
 			remainingSeconds = selectedDurationMinutes() * 60;
 		}
 		currentIndex = 0;
+		answers.clear(); // respostas de uma prova anterior não podem contar nesta
+		examMeta = {
+			modalidade: selectedDurationInput().dataset.mode,
+			escopo: configForm.elements.scope.value === "all" ? "Todas as matérias" : subjectSelect.value,
+			duracaoMin: Math.round(remainingSeconds / 60),
+			totalSeconds: remainingSeconds,
+		};
 		setupPanel.hidden = true;
 		runPanel.hidden = false;
 		resetPenalties();
 		examRunning = true;
-		document.querySelector("#run-kicker").textContent = configForm.elements.scope.value === "all"
-			? "SIMULADO COMPLETO"
-			: `SIMULADO · ${subjectSelect.value.toUpperCase()}`;
+		// Ex.: "TREINO RÁPIDO · TODAS AS MATÉRIAS", "PRÁTICA REAL · MATEMÁTICA".
+		document.querySelector("#run-kicker").textContent = `${examMeta.modalidade} · ${examMeta.escopo}`.toUpperCase();
 		renderQuestion();
 		document.querySelector("#timer").textContent = formatTime(remainingSeconds);
 		timerInterval = window.setInterval(() => {
 			remainingSeconds -= 1;
 			document.querySelector("#timer").textContent = formatTime(remainingSeconds);
-			if (remainingSeconds <= 0) finishExam();
+			if (remainingSeconds <= 0) finishExam("tempo");
 		}, 1000);
 	}
 
@@ -705,7 +903,7 @@ async function initializeSimulator() {
 			currentIndex += 1;
 			renderQuestion();
 		} else {
-			finishExam();
+			requestFinish();
 		}
 	});
 	document.querySelector("#previous-question").addEventListener("click", () => {
@@ -714,8 +912,9 @@ async function initializeSimulator() {
 			renderQuestion();
 		}
 	});
-	document.querySelector("#finish-exam").addEventListener("click", finishExam);
+	document.querySelector("#finish-exam").addEventListener("click", requestFinish);
 	updateEstimate();
+	renderHistory();
 
 	loadQuestionBank().then(() => {
 		startButton.disabled = false;

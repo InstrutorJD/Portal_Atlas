@@ -321,8 +321,40 @@ function renderPeriodos() {
     </div>`;
 }
 
+// Retorna a primeira mensagem de erro encontrada, ou null se tudo estiver válido
+function validarPeriodos(v) {
+  const periodos = [
+    ['t-ins-ini', 't-ins-fim', 'Tutoria · Inscrições'],
+    ['e-cri-ini', 'e-cri-fim', 'Eletivas · Criação'],
+    ['e-apr-ini', 'e-apr-fim', 'Eletivas · Aprovação'],
+    ['e-ins-ini', 'e-ins-fim', 'Eletivas · Inscrições'],
+    ['c-cri-ini', 'c-cri-fim', 'Clubinhos · Criação'],
+    ['c-apr-ini', 'c-apr-fim', 'Clubinhos · Aprovação'],
+    ['c-ins-ini', 'c-ins-fim', 'Clubinhos · Inscrições'],
+  ];
+  for (const [ini, fim, nome] of periodos) {
+    if (!v(ini) || !v(fim)) return `${nome}: preencha as datas de início e fim.`;
+    if (v(fim) < v(ini)) return `${nome}: a data de fim é anterior à de início.`;
+  }
+
+  const numeros = [
+    ['t-vagas', 'Vagas por tutor'],
+    ['e-vagas', 'Vagas por eletiva'],
+    ['c-vagas', 'Vagas por clubinho'],
+    ['c-dur', 'Duração do clubinho'],
+  ];
+  for (const [id, nome] of numeros) {
+    const n = Number(v(id));
+    if (!Number.isInteger(n) || n < 1) return `${nome}: informe um número inteiro maior que zero.`;
+  }
+  return null;
+}
+
 async function salvarPeriodos() {
   const v = id => document.getElementById(id).value;
+
+  const erro = validarPeriodos(v);
+  if (erro) { mostrarToast(erro, 'erro'); return; }
 
   try {
     console.log('💾 Iniciando salvamento de configurações...');

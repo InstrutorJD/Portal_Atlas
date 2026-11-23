@@ -45,3 +45,9 @@ Os arquivos `dados/provas/prova-AAAA` seguem um formato padronizado (descrito em
 - `node dados/ferramentas/verificar-banco.js [--detalhes]`: mostra quantas questões de cada ano entram no simulador e por que as demais foram descartadas.
 
 Questões marcadas com `(tem imagem)` só entram no simulado se a imagem correspondente existir no índice. Questões cujas alternativas são imagens ficam de fora.
+
+## Resultados dos simulados
+
+Cada resultado é salvo no navegador do aluno (`localStorage`) e, quando o Supabase está configurado, também na tabela `simulado_resultados`. Para criar a tabela num projeto existente, execute `dados/migracoes/001_simulado_resultados.sql` no SQL Editor do Supabase. A tabela já faz parte de `dados/banco.sql` para instalações novas. O histórico dos últimos simulados aparece na tela de configuração da prova.
+
+Em projetos Supabase criados antes de novembro/2026, execute também `dados/migracoes/002_validacoes_vagas_periodos.sql`. Ela faz o banco recusar inscrições acima do limite de vagas (tutoria, eletiva e clubinho), entradas em clubinhos expirados e períodos com data de fim anterior à de início, e permite que o aluno tenha um tutor por ano letivo.

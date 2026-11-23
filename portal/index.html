@@ -29,9 +29,13 @@
     </form>
 
     <aside class="login-help" aria-label="Acesso de demonstração">
-      <strong>Login rápido de teste:</strong>
-      <p>Aluno: <em>aluno@atlas.com</em> / <em>Teste@1234</em></p>
-      <button class="btn btn-outline btn--sm" id="quick-login" type="button">Entrar como aluno</button>
+      <strong>Entrar direto (teste):</strong>
+      <div class="login-rapido">
+        <button class="btn btn-outline btn--sm" type="button" data-email="aluno@atlas.com">🎒 Aluno</button>
+        <button class="btn btn-outline btn--sm" type="button" data-email="professor@atlas.com">📚 Professor</button>
+        <button class="btn btn-outline btn--sm" type="button" data-email="coordenador@atlas.com">🗂️ Coordenador</button>
+      </div>
+      <p class="login-rapido__nota">Senha de teste: <em>Teste@1234</em></p>
     </aside>
   </main>
 
@@ -65,10 +69,13 @@
       }
     });
 
-    document.querySelector("#quick-login").addEventListener("click", () => {
-      loginForm.elements.email.value = "aluno@atlas.com";
-      loginForm.elements.senha.value = "Teste@1234";
-      loginForm.requestSubmit();
+    document.querySelectorAll(".login-rapido [data-email]").forEach((botao) => {
+      botao.addEventListener("click", () => {
+        if (loginButton.disabled) return;
+        loginForm.elements.email.value = botao.dataset.email;
+        loginForm.elements.senha.value = "Teste@1234";
+        loginForm.requestSubmit();
+      });
     });
   </script>
   <footer class="dev-footer">Versão em desenvolvimento</footer>

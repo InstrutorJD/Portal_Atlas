@@ -40,16 +40,16 @@ if (SUPABASE_URL && SUPABASE_KEY && typeof window.supabase !== 'undefined') {
 // =============== DADOS MOCK (fallback) ===============
 const _DB = {
   usuarios: [
-    { id: '1', nome: 'Professor Teste', email: 'prof@example.com', tipo: 'professor', is_tutor: true },
-    { id: '2', nome: 'Coordenador Teste', email: 'coord@example.com', tipo: 'coordenador', is_coordenador: true },
-    { id: '3', nome: 'Aluno Teste', email: 'aluno@example.com', tipo: 'aluno' }
+    { id: '1', nome: 'Professor Teste', email: 'professor@atlas.com', tipo: 'professor', is_tutor: true },
+    { id: '2', nome: 'Coordenador Teste', email: 'coordenador@atlas.com', tipo: 'coordenador', is_coordenador: true },
+    { id: '3', nome: 'Aluno Teste', email: 'aluno@atlas.com', tipo: 'aluno' }
   ],
   colaboradores: [
-    { id: '1', nome: 'Professor Teste', email: 'prof@example.com', is_professor: true, is_tutor: true, is_coordenador: false },
-    { id: '2', nome: 'Coordenador Teste', email: 'coord@example.com', is_professor: false, is_tutor: false, is_coordenador: true }
+    { id: '1', nome: 'Professor Teste', email: 'professor@atlas.com', is_professor: true, is_tutor: true, is_coordenador: false },
+    { id: '2', nome: 'Coordenador Teste', email: 'coordenador@atlas.com', is_professor: false, is_tutor: false, is_coordenador: true }
   ],
   alunos: [
-    { id: '3', nome: 'Aluno Teste', email: 'aluno@example.com' }
+    { id: '3', nome: 'Aluno Teste', email: 'aluno@atlas.com' }
   ],
   configuracoes: [],
   tutoria_config: { ano_letivo: 2026, max_alunos: 10 },
@@ -94,11 +94,15 @@ async function login(email, senha) {
       throw e;
     }
   } else {
-    // Modo mock
-    const sessao = { 
-      user: { email }, 
-      perfil: { nome: 'Usuário Teste', tipo: 'aluno' },
-      criada_em: Date.now()  // ✅ ADICIONADO: timestamp para validar expiração
+    // Modo mock: o perfil vem do usuário de demonstração com esse e-mail
+    const usuario = _DB.usuarios.find(u => u.email.toLowerCase() === String(email).toLowerCase());
+    if (!usuario) {
+      throw new Error('Modo de demonstração: use aluno@atlas.com, professor@atlas.com ou coordenador@atlas.com.');
+    }
+    const sessao = {
+      user: { id: usuario.id, email: usuario.email },
+      perfil: { ...usuario },
+      criada_em: Date.now()  // timestamp para validar expiração
     };
     localStorage.setItem('portal_atlas_sessao', JSON.stringify(sessao));
     return sessao;
@@ -122,7 +126,8 @@ async function getSessao() {
     const agora = Date.now();
     const TIMEOUT_SESSAO = 24 * 60 * 60 * 1000; // 24 horas em ms
     
-    if (sessao.criada_em && agora - sessao.criada_em > TIMEOUT_SESSAO) {
+    // Sessão sem criada_em (formato antigo) também é tratada como expirada
+    if (!sessao.criada_em || agora - sessao.criada_em > TIMEOUT_SESSAO) {
       console.warn('⏰ Sessão expirada');
       localStorage.removeItem('portal_atlas_sessao');
       return null;
@@ -348,9 +353,10 @@ async function criarClubinho(liderId, nome, descricao, ano, config) {
   if (SUPABASE_ENABLED) {
     let validadeAte = null;
     if (config?.duracao_meses) {
+      // Data local (não UTC). O banco também calcula validade_ate se vier nula.
       const d = new Date();
       d.setMonth(d.getMonth() + config.duracao_meses);
-      validadeAte = d.toISOString().split('T')[0];
+      validadeAte = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
     const { data, error } = await supabaseClient.from('clubinhos').insert([{ nome, descricao, lider_id: liderId, ano_letivo: ano, status: 'pendente', validade_ate: validadeAte }]).select().single();
     if (error) throw error;
@@ -479,6 +485,62 @@ async function salvarConfig(tabela, dados) {
   }
 }
 
+// =============== RESULTADOS DO SIMULADO ENEM ===============
+// Tabela simulado_resultados (dados/migracoes/001_simulado_resultados.sql).
+// Sem Supabase (modo mock) as funções retornam null e o simulador usa só o localStorage.
+async function salvarResultadoSimulado(resultado) {
+  if (!SUPABASE_ENABLED) return null;
+  const perfil = await getPerfil();
+  if (!perfil?.id || perfil.tipo !== 'aluno') return null;
+  const { error } = await supabaseClient.from('simulado_resultados').insert([{
+    id: resultado.id,
+    aluno_id: perfil.id,
+    modalidade: resultado.modalidade,
+    escopo: resultado.escopo,
+    duracao_min: resultado.duracaoMin,
+    tempo_gasto_seg: resultado.tempoGastoSeg,
+    total: resultado.total,
+    acertos: resultado.acertos,
+    erros: resultado.erros,
+    em_branco: resultado.emBranco,
+    advertencias: resultado.advertencias,
+    motivo_encerramento: resultado.motivo,
+    por_area: resultado.porArea,
+    respostas: resultado.respostas,
+    criado_em: resultado.criadoEm,
+  }]);
+  if (error) throw error;
+  return true;
+}
+
+async function listarResultadosSimulado(limite = 20) {
+  if (!SUPABASE_ENABLED) return null;
+  const perfil = await getPerfil();
+  if (!perfil?.id || perfil.tipo !== 'aluno') return null;
+  const { data, error } = await supabaseClient
+    .from('simulado_resultados')
+    .select('id, modalidade, escopo, duracao_min, tempo_gasto_seg, total, acertos, erros, em_branco, advertencias, motivo_encerramento, por_area, criado_em')
+    .eq('aluno_id', perfil.id)
+    .order('criado_em', { ascending: false })
+    .limit(limite);
+  if (error) throw error;
+  return (data || []).map((linha) => ({
+    id: linha.id,
+    criadoEm: linha.criado_em,
+    modalidade: linha.modalidade,
+    escopo: linha.escopo,
+    duracaoMin: linha.duracao_min,
+    tempoGastoSeg: linha.tempo_gasto_seg,
+    total: linha.total,
+    acertos: linha.acertos,
+    erros: linha.erros,
+    emBranco: linha.em_branco,
+    advertencias: linha.advertencias,
+    motivo: linha.motivo_encerramento,
+    porArea: linha.por_area,
+  }));
+}
+
 // Expõe a instância do cliente adaptada como 'window.db' para os scripts secundários (coordenador.js, professor.js)
 window.db = supabaseClient;
 
@@ -508,6 +570,8 @@ window.atualizarStatusEletiva = atualizarStatusEletiva;
 window.atualizarStatusClubinho = atualizarStatusClubinho;
 window.submitEletiva = submitEletiva;
 window.salvarConfig = salvarConfig;
+window.salvarResultadoSimulado = salvarResultadoSimulado;
+window.listarResultadosSimulado = listarResultadosSimulado;
 window.SUPABASE_ENABLED = SUPABASE_ENABLED;
 window._DB = _DB;
 

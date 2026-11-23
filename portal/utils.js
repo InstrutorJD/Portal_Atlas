@@ -4,22 +4,32 @@
 // =============================================
 
 /**
- * Verifica se a data atual está dentro de um período (inicio e fim)
- * ✅ CORRIGIDO: Agora compara datas em string ISO para evitar problemas de timezone
- * @param {string|Date} inicio - Data de início (ISO 8601 ou Date)
- * @param {string|Date} fim - Data de fim (ISO 8601 ou Date)
+ * Data de hoje no fuso do navegador, no formato YYYY-MM-DD.
+ * Não usar toISOString(): ela devolve a data em UTC, que no Brasil (UTC-3)
+ * já é o dia seguinte a partir das 21h.
+ * @returns {string}
+ */
+function hojeLocalISO() {
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
+/**
+ * Verifica se a data atual está dentro de um período (inicio e fim, inclusive)
+ * As colunas são DATE (YYYY-MM-DD), então a comparação é feita como texto
+ * contra a data local de hoje.
+ * @param {string} inicio - Data de início (YYYY-MM-DD)
+ * @param {string} fim - Data de fim (YYYY-MM-DD)
  * @returns {boolean} true se hoje está entre as datas
  */
 function periodoAtivo(inicio, fim) {
   if (!inicio || !fim) return false;
-  
-  // Converter para strings no formato YYYY-MM-DD para evitar timezone issues
-  const hojeStr = new Date().toISOString().split('T')[0];
-  const inicioStr = String(inicio).split('T')[0];
-  const fimStr = String(fim).split('T')[0];
-  
-  // Comparar como strings (YYYY-MM-DD) - mais seguro que objetos Date
-  return inicioStr <= hojeStr && hojeStr <= fimStr;
+  const hoje = hojeLocalISO();
+  const inicioStr = String(inicio).slice(0, 10);
+  const fimStr = String(fim).slice(0, 10);
+  return inicioStr <= hoje && hoje <= fimStr;
 }
 
 /**
@@ -29,6 +39,12 @@ function periodoAtivo(inicio, fim) {
  */
 function formatarData(data) {
   if (!data) return '';
+  // "YYYY-MM-DD" sozinho é interpretado como meia-noite UTC e mostraria o dia anterior no Brasil
+  const soData = typeof data === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data);
+  if (soData) {
+    const [ano, mes, dia] = data.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
   const d = new Date(data);
   if (isNaN(d)) return '';
   const dia = String(d.getDate()).padStart(2, '0');

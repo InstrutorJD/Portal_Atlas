@@ -329,6 +329,101 @@
 	margin-top: 6px;
 }
 
+/* Modal ao encerrar com questões em branco (âmbar: atenção, não punição) */
+.enem-simulator .exam-finish-dialog .exam-warning-box {
+	border-top-color: #e4ad27;
+}
+
+.enem-simulator .exam-finish-dialog .exam-warning-box .dashboard-kicker {
+	color: #85610e;
+}
+
+.enem-simulator .exam-finish-dialog .dialog-actions {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* Aviso de salvamento no resultado */
+.enem-simulator .result-saved {
+	margin: 10px 0 0;
+	color: #067647;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.enem-simulator .result-saved::before {
+	content: "✓ ";
+}
+
+.enem-simulator .result-saved[data-state="error"] {
+	color: #b42318;
+}
+
+.enem-simulator .result-saved[data-state="error"]::before {
+	content: "! ";
+}
+
+/* Histórico de simulados (tela de configuração) */
+.enem-simulator .exam-history {
+	display: grid;
+	gap: 10px;
+	margin-top: 26px;
+	padding-top: 22px;
+	border-top: 1px solid var(--exam-border);
+}
+
+.enem-simulator .exam-history h2 {
+	margin: 6px 0 0;
+	color: #1f2933;
+	font-size: 18px;
+}
+
+.enem-simulator .exam-history-source {
+	margin: 0;
+	color: var(--exam-muted);
+	font-size: 13px;
+}
+
+.enem-simulator .exam-history-list {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.enem-simulator .exam-history-item {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 4px 12px;
+	align-items: center;
+	padding: 12px 14px;
+	border: 1px solid var(--exam-border);
+	border-radius: 9px;
+	background: #fff;
+}
+
+.enem-simulator .exam-history-item[data-penalty="true"] {
+	border-left: 4px solid #b42318;
+}
+
+.enem-simulator .exam-history-item strong {
+	color: #1f2933;
+	font-size: 14px;
+}
+
+.enem-simulator .exam-history-score {
+	color: var(--exam-primary-dark);
+	font-size: 14px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.enem-simulator .exam-history-item small {
+	grid-column: 1 / -1;
+	color: var(--exam-muted);
+	font-size: 12px;
+}
+
 /* Modal de início: card vermelho, chamativo */
 .enem-simulator .exam-start-dialog .exam-warning-box {
 	gap: 16px;
@@ -1048,6 +1143,10 @@ html:fullscreen {
 }
 
 @media (max-width: 760px) {
+	.enem-simulator .exam-finish-dialog .dialog-actions {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
 	.enem-simulator .duration-options {
 		grid-template-columns: minmax(0, 1fr);
 	}

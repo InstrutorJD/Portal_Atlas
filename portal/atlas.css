@@ -77,3 +77,9 @@ a:focus, button:focus, input:focus, textarea:focus { outline: 3px solid rgba(0,1
     .card { padding: 20px; }
     .icon { font-size: 2.2rem; }
 }
+
+/* Login rápido de teste (Aluno / Professor / Coordenador) */
+.login-rapido { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.login-rapido .btn.btn--sm { width: 100%; margin: 0; }
+.login-rapido__nota { font-size: 0.85rem; color: #666; }
+@media (max-width: 360px) { .login-rapido { grid-template-columns: 1fr; } }

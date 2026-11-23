@@ -83,10 +83,11 @@ CREATE TABLE colaboradores (
 
 CREATE TABLE tutoria_vinculos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  aluno_id UUID UNIQUE NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
+  aluno_id UUID NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
   colaborador_id UUID NOT NULL REFERENCES colaboradores(id) ON DELETE CASCADE,
   ano_letivo INT NOT NULL,
-  criado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
+  criado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()),
+  CONSTRAINT tutoria_vinculos_aluno_ano_key UNIQUE (aluno_id, ano_letivo)  -- 1 tutor por aluno por ano
 );
 
 -- =============================================
@@ -249,42 +250,210 @@ CREATE POLICY "cm_delete_aluno" ON clubinho_membros
 -- TRIGGERS DE VALIDAÇÃO
 -- =============================================
 
--- ✅ TRIGGER 1: Validar vagas de eletiva
--- Impede inserção de matrícula se ultrapassar vagas
+-- Mesmo conteúdo de dados/migracoes/002_validacoes_vagas_periodos.sql (seções 2 a 4)
+
+-- ---------- 2. Períodos coerentes ----------
+-- NOT VALID: não rejeita linhas antigas, mas vale para todo INSERT/UPDATE daqui em diante.
+ALTER TABLE tutoria_config DROP CONSTRAINT IF EXISTS tutoria_config_periodos_chk;
+ALTER TABLE tutoria_config ADD CONSTRAINT tutoria_config_periodos_chk CHECK (
+  data_criacao_fim >= data_criacao_inicio
+  AND data_inscricao_fim >= data_inscricao_inicio
+  AND vagas_por_tutor > 0
+) NOT VALID;
+
+ALTER TABLE eletiva_config DROP CONSTRAINT IF EXISTS eletiva_config_periodos_chk;
+ALTER TABLE eletiva_config ADD CONSTRAINT eletiva_config_periodos_chk CHECK (
+  data_criacao_fim >= data_criacao_inicio
+  AND data_aprovacao_fim >= data_aprovacao_inicio
+  AND data_inscricao_fim >= data_inscricao_inicio
+  AND vagas_por_eletiva > 0
+) NOT VALID;
+
+ALTER TABLE clubinho_config DROP CONSTRAINT IF EXISTS clubinho_config_periodos_chk;
+ALTER TABLE clubinho_config ADD CONSTRAINT clubinho_config_periodos_chk CHECK (
+  data_criacao_fim >= data_criacao_inicio
+  AND data_aprovacao_fim >= data_aprovacao_inicio
+  AND data_inscricao_fim >= data_inscricao_inicio
+  AND vagas_por_clubinho > 0
+  AND duracao_meses > 0
+) NOT VALID;
+
+-- ---------- 3a. Vagas de eletiva ----------
 CREATE OR REPLACE FUNCTION validar_vagas_eletiva()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
-  vagas_eletiva INT;
-  vagas_default INT;
-  count_matriculas INT;
+  limite INT;
+  ocupadas INT;
 BEGIN
-  -- Obter vagas da eletiva (ou usar default do config)
-  SELECT COALESCE(e.vagas, ec.vagas_por_eletiva) INTO vagas_eletiva
+  -- Serializa inscrições na mesma eletiva (evita duas passarem ao mesmo tempo na última vaga)
+  PERFORM pg_advisory_xact_lock(hashtext('eletiva:' || NEW.eletiva_id::text));
+
+  SELECT COALESCE(e.vagas, ec.vagas_por_eletiva) INTO limite
   FROM eletivas e
   LEFT JOIN eletiva_config ec ON ec.ano_letivo = e.ano_letivo
   WHERE e.id = NEW.eletiva_id;
-  
-  -- Contar matriculas existentes (sem incluir a nova)
-  SELECT COUNT(*) INTO count_matriculas
+
+  SELECT COUNT(*) INTO ocupadas
   FROM eletiva_matriculas
-  WHERE eletiva_id = NEW.eletiva_id AND ano_letivo = NEW.ano_letivo;
-  
-  -- Validar
-  IF vagas_eletiva IS NOT NULL AND count_matriculas >= vagas_eletiva THEN
-    RAISE EXCEPTION 'Eletiva lotada: % matriculas mas apenas % vagas',
-      count_matriculas + 1, vagas_eletiva;
+  WHERE eletiva_id = NEW.eletiva_id;
+
+  IF limite IS NOT NULL AND ocupadas >= limite THEN
+    RAISE EXCEPTION 'Eletiva lotada: % de % vagas ocupadas', ocupadas, limite;
   END IF;
-  
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
--- Attach trigger
 DROP TRIGGER IF EXISTS tr_validar_vagas_eletiva ON eletiva_matriculas;
 CREATE TRIGGER tr_validar_vagas_eletiva
-  BEFORE INSERT ON eletiva_matriculas
-  FOR EACH ROW
-  EXECUTE FUNCTION validar_vagas_eletiva();
+  BEFORE INSERT OR UPDATE OF eletiva_id ON eletiva_matriculas
+  FOR EACH ROW EXECUTE FUNCTION validar_vagas_eletiva();
+
+-- ---------- 3b. Vagas de tutoria ----------
+CREATE OR REPLACE FUNCTION validar_vagas_tutoria()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  limite INT;
+  ocupadas INT;
+BEGIN
+  IF TG_OP = 'UPDATE' AND NEW.colaborador_id = OLD.colaborador_id THEN
+    RETURN NEW;
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtext('tutor:' || NEW.colaborador_id::text || ':' || NEW.ano_letivo));
+
+  SELECT vagas_por_tutor INTO limite
+  FROM tutoria_config WHERE ano_letivo = NEW.ano_letivo
+  LIMIT 1;
+
+  SELECT COUNT(*) INTO ocupadas
+  FROM tutoria_vinculos
+  WHERE colaborador_id = NEW.colaborador_id
+    AND ano_letivo = NEW.ano_letivo
+    AND id <> NEW.id;
+
+  IF limite IS NOT NULL AND ocupadas >= limite THEN
+    RAISE EXCEPTION 'Tutor sem vagas: % de % vagas ocupadas', ocupadas, limite;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_validar_vagas_tutoria ON tutoria_vinculos;
+CREATE TRIGGER tr_validar_vagas_tutoria
+  BEFORE INSERT OR UPDATE OF colaborador_id ON tutoria_vinculos
+  FOR EACH ROW EXECUTE FUNCTION validar_vagas_tutoria();
+
+-- ---------- 4a. validade_ate automática ----------
+CREATE OR REPLACE FUNCTION preencher_validade_clubinho()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  meses INT;
+BEGIN
+  IF NEW.validade_ate IS NULL THEN
+    SELECT duracao_meses INTO meses
+    FROM clubinho_config WHERE ano_letivo = NEW.ano_letivo
+    LIMIT 1;
+
+    NEW.validade_ate := ((now() AT TIME ZONE 'America/Sao_Paulo')::date
+                         + make_interval(months => COALESCE(meses, 6)))::date;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_preencher_validade_clubinho ON clubinhos;
+CREATE TRIGGER tr_preencher_validade_clubinho
+  BEFORE INSERT ON clubinhos
+  FOR EACH ROW EXECUTE FUNCTION preencher_validade_clubinho();
+
+-- Clubinhos antigos sem validade: calcula a partir da data de criação
+UPDATE clubinhos c
+SET validade_ate = ((c.criado_em AT TIME ZONE 'America/Sao_Paulo')::date
+                    + make_interval(months => COALESCE(
+                        (SELECT cc.duracao_meses FROM clubinho_config cc
+                         WHERE cc.ano_letivo = c.ano_letivo LIMIT 1), 6)))::date
+WHERE c.validade_ate IS NULL;
+
+-- ---------- 4b. Entrada em clubinho: vagas e validade ----------
+CREATE OR REPLACE FUNCTION validar_entrada_clubinho()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  limite INT;
+  ocupadas INT;
+  validade DATE;
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtext('clubinho:' || NEW.clubinho_id::text));
+
+  SELECT COALESCE(c.vagas, cc.vagas_por_clubinho), c.validade_ate INTO limite, validade
+  FROM clubinhos c
+  LEFT JOIN clubinho_config cc ON cc.ano_letivo = c.ano_letivo
+  WHERE c.id = NEW.clubinho_id;
+
+  IF validade IS NOT NULL AND validade < (now() AT TIME ZONE 'America/Sao_Paulo')::date THEN
+    RAISE EXCEPTION 'Clubinho expirado em %', to_char(validade, 'DD/MM/YYYY');
+  END IF;
+
+  SELECT COUNT(*) INTO ocupadas
+  FROM clubinho_membros
+  WHERE clubinho_id = NEW.clubinho_id;
+
+  IF limite IS NOT NULL AND ocupadas >= limite THEN
+    RAISE EXCEPTION 'Clubinho lotado: % de % vagas ocupadas', ocupadas, limite;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_validar_entrada_clubinho ON clubinho_membros;
+CREATE TRIGGER tr_validar_entrada_clubinho
+  BEFORE INSERT OR UPDATE OF clubinho_id ON clubinho_membros
+  FOR EACH ROW EXECUTE FUNCTION validar_entrada_clubinho();
+
+-- =============================================
+-- RESULTADOS DO SIMULADO ENEM (também em dados/migracoes/001_simulado_resultados.sql)
+-- =============================================
+
+CREATE TABLE IF NOT EXISTS simulado_resultados (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  aluno_id UUID NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
+  modalidade TEXT NOT NULL,                 -- Treino Rápido | Treino | Prática Real
+  escopo TEXT NOT NULL,                     -- "Todas as matérias" ou o nome da matéria
+  duracao_min INT NOT NULL CHECK (duracao_min > 0),
+  tempo_gasto_seg INT NOT NULL CHECK (tempo_gasto_seg >= 0),
+  total INT NOT NULL CHECK (total > 0),
+  acertos INT NOT NULL CHECK (acertos >= 0),
+  erros INT NOT NULL CHECK (erros >= 0),
+  em_branco INT NOT NULL CHECK (em_branco >= 0),
+  advertencias INT NOT NULL DEFAULT 0 CHECK (advertencias >= 0),
+  motivo_encerramento TEXT NOT NULL CHECK (motivo_encerramento IN ('manual', 'tempo', 'penalidade')),
+  por_area JSONB NOT NULL,                  -- [{ "area": "...", "total": n, "acertos": n }]
+  respostas JSONB NOT NULL,                 -- [{ "questao": "2022-74", "resposta": "B", "correta": "D" }]
+  criado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()),
+  CHECK (acertos + erros + em_branco = total)
+);
+
+CREATE INDEX IF NOT EXISTS simulado_resultados_aluno_data
+  ON simulado_resultados (aluno_id, criado_em DESC);
+
+ALTER TABLE simulado_resultados ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "sr_select" ON simulado_resultados;
+CREATE POLICY "sr_select" ON simulado_resultados
+  FOR SELECT USING (
+    aluno_id = (get_aluno_logado()).id
+    OR (get_colaborador_logado()).is_coordenador = true
+  );
+
+DROP POLICY IF EXISTS "sr_insert_proprio" ON simulado_resultados;
+CREATE POLICY "sr_insert_proprio" ON simulado_resultados
+  FOR INSERT WITH CHECK (aluno_id = (get_aluno_logado()).id);
+
+-- Sem políticas de UPDATE/DELETE: o resultado de um simulado não pode ser alterado pelo aluno.
 
 -- =============================================
 -- END OF SCHEMA
