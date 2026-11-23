@@ -250,7 +250,7 @@ CREATE POLICY "cm_delete_aluno" ON clubinho_membros
 -- TRIGGERS DE VALIDAÇÃO
 -- =============================================
 
--- Mesmo conteúdo de dados/migracoes/002_validacoes_vagas_periodos.sql (seções 2 a 4)
+-- Mesmo conteúdo de dados/atualizacao_supabase.sql (parte 2)
 
 -- ---------- 2. Períodos coerentes ----------
 -- NOT VALID: não rejeita linhas antigas, mas vale para todo INSERT/UPDATE daqui em diante.
@@ -415,7 +415,7 @@ CREATE TRIGGER tr_validar_entrada_clubinho
   FOR EACH ROW EXECUTE FUNCTION validar_entrada_clubinho();
 
 -- =============================================
--- RESULTADOS DO SIMULADO ENEM (também em dados/migracoes/001_simulado_resultados.sql)
+-- RESULTADOS DO SIMULADO ENEM (também em dados/atualizacao_supabase.sql, parte 1)
 -- =============================================
 
 CREATE TABLE IF NOT EXISTS simulado_resultados (

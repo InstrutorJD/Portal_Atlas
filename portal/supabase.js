@@ -486,7 +486,7 @@ async function salvarConfig(tabela, dados) {
 }
 
 // =============== RESULTADOS DO SIMULADO ENEM ===============
-// Tabela simulado_resultados (dados/migracoes/001_simulado_resultados.sql).
+// Tabela simulado_resultados (criada por dados/atualizacao_supabase.sql).
 // Sem Supabase (modo mock) as funções retornam null e o simulador usa só o localStorage.
 async function salvarResultadoSimulado(resultado) {
   if (!SUPABASE_ENABLED) return null;

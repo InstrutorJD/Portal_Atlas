@@ -48,6 +48,14 @@ Questões marcadas com `(tem imagem)` só entram no simulado se a imagem corresp
 
 ## Resultados dos simulados
 
-Cada resultado é salvo no navegador do aluno (`localStorage`) e, quando o Supabase está configurado, também na tabela `simulado_resultados`. Para criar a tabela num projeto existente, execute `dados/migracoes/001_simulado_resultados.sql` no SQL Editor do Supabase. A tabela já faz parte de `dados/banco.sql` para instalações novas. O histórico dos últimos simulados aparece na tela de configuração da prova.
+Cada resultado é salvo no navegador do aluno (`localStorage`) e, quando o Supabase está configurado, também na tabela `simulado_resultados`. A tabela já faz parte de `dados/banco.sql` para instalações novas. O histórico dos últimos simulados aparece na tela de configuração da prova.
 
-Em projetos Supabase criados antes de novembro/2026, execute também `dados/migracoes/002_validacoes_vagas_periodos.sql`. Ela faz o banco recusar inscrições acima do limite de vagas (tutoria, eletiva e clubinho), entradas em clubinhos expirados e períodos com data de fim anterior à de início, e permite que o aluno tenha um tutor por ano letivo.
+## Atualizar um Supabase já existente
+
+Cole `dados/atualizacao_supabase.sql` inteiro no SQL Editor do Supabase e execute. O script pode ser rodado mais de uma vez e é aplicado por inteiro ou não é aplicado. Ele:
+
+- cria a tabela `simulado_resultados`;
+- faz o banco recusar inscrições acima do limite de vagas (tutoria, eletiva e clubinho), entradas em clubinhos expirados e períodos com data de fim anterior à de início, e permite um tutor por aluno por ano letivo;
+- cria os perfis das contas de teste (`aluno@`, `professor@` e `coordenador@atlas.com`) e liga o `auth_id` de cada perfil ao usuário do Authentication pelo e-mail.
+
+No fim, o script mostra cada usuário do Authentication e o perfil ligado a ele.

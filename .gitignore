@@ -1,5 +1,6 @@
 # Credenciais e configuração local
-config.js
+# portal/config.js é versionado: contém só a URL e a chave pública (publishable) do Supabase
+/config.js
 .env.local
 .env
 
