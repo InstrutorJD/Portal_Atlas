@@ -319,7 +319,7 @@ async function criarNovoClubinho() {
 
   try {
     await criarClubinho(PERFIL.id, nome, desc, ANO, CONFIGS.clubinho);
-    mostrarToast('Clubinho enviado para aprovação da coordenação!');
+    mostrarToast('Clubinho enviado! Quando a coordenação aprovar, você entra nele automaticamente.');
     fecharModal();
   } catch (e) {
     mostrarToast('Erro ao criar clubinho. Tente novamente.', 'erro');

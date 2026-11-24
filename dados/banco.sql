@@ -463,6 +463,32 @@ CREATE TRIGGER tr_validar_entrada_clubinho
   BEFORE INSERT OR UPDATE OF clubinho_id ON clubinho_membros
   FOR EACH ROW EXECUTE FUNCTION validar_entrada_clubinho();
 
+-- ---------- Líder entra no próprio clubinho quando ele é aprovado ----------
+-- Quem criou o clubinho vira membro automaticamente na aprovação da coordenação.
+-- Se o líder já estava em outro clubinho no mesmo ano, passa para o dele
+-- (cada aluno participa de um clubinho por ano).
+CREATE OR REPLACE FUNCTION inscrever_lider_clubinho()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $fn$
+BEGIN
+  IF NEW.status = 'aprovado'
+     AND NEW.lider_id IS NOT NULL
+     AND (TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM 'aprovado') THEN
+    INSERT INTO clubinho_membros (clubinho_id, aluno_id, ano_letivo)
+    VALUES (NEW.id, NEW.lider_id, NEW.ano_letivo)
+    ON CONFLICT (aluno_id, ano_letivo)
+    DO UPDATE SET clubinho_id = EXCLUDED.clubinho_id, entrou_em = timezone('utc', now());
+  END IF;
+  RETURN NEW;
+END;
+$fn$;
+
+DROP TRIGGER IF EXISTS tr_inscrever_lider_clubinho ON clubinhos;
+CREATE TRIGGER tr_inscrever_lider_clubinho
+  AFTER INSERT OR UPDATE OF status ON clubinhos
+  FOR EACH ROW EXECUTE FUNCTION inscrever_lider_clubinho();
+
+
 -- =============================================
 -- RESULTADOS DO SIMULADO ENEM (também em dados/atualizacao_supabase.sql, parte 1)
 -- =============================================

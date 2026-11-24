@@ -8,7 +8,8 @@
 -- PARTE 2 — Validações: 1 tutor por aluno por ano, limite de vagas no banco
 --           (tutoria/eletiva/clubinho), validade do clubinho, datas dos períodos,
 --           troca de eletiva e visibilidade de eletivas/clubinhos pelo prazo de inscrição,
---           leitura dos alunos pelo professor (relatórios)
+--           leitura dos alunos pelo professor (relatórios),
+--           líder inscrito no próprio clubinho ao ser aprovado
 -- PARTE 3 — Perfis das contas de teste e ligação auth_id pelo e-mail
 -- No fim aparece uma tabela de conferência com o perfil de cada usuário.
 -- =============================================
@@ -300,6 +301,54 @@ CREATE POLICY "aluno_select_professor" ON alunos
                WHERE v.aluno_id = alunos.id
                  AND v.colaborador_id = (get_colaborador_logado()).id)
   );
+
+-- ---------- 8. Líder entra no próprio clubinho quando ele é aprovado ----------
+-- Quem criou o clubinho vira membro automaticamente na aprovação da coordenação.
+-- Se o líder já estava em outro clubinho no mesmo ano, passa para o dele
+-- (cada aluno participa de um clubinho por ano).
+CREATE OR REPLACE FUNCTION inscrever_lider_clubinho()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $fn$
+BEGIN
+  IF NEW.status = 'aprovado'
+     AND NEW.lider_id IS NOT NULL
+     AND (TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM 'aprovado') THEN
+    INSERT INTO clubinho_membros (clubinho_id, aluno_id, ano_letivo)
+    VALUES (NEW.id, NEW.lider_id, NEW.ano_letivo)
+    ON CONFLICT (aluno_id, ano_letivo)
+    DO UPDATE SET clubinho_id = EXCLUDED.clubinho_id, entrou_em = timezone('utc', now());
+  END IF;
+  RETURN NEW;
+END;
+$fn$;
+
+DROP TRIGGER IF EXISTS tr_inscrever_lider_clubinho ON clubinhos;
+CREATE TRIGGER tr_inscrever_lider_clubinho
+  AFTER INSERT OR UPDATE OF status ON clubinhos
+  FOR EACH ROW EXECUTE FUNCTION inscrever_lider_clubinho();
+
+-- Clubinhos já aprovados: inscreve o líder que ainda não está em nenhum clubinho no ano
+-- (quem já está em outro clubinho continua onde está). Clubinho vencido ou lotado é pulado.
+DO $$
+DECLARE
+  c RECORD;
+BEGIN
+  FOR c IN
+    SELECT cl.id, cl.lider_id, cl.ano_letivo
+    FROM clubinhos cl
+    WHERE cl.status = 'aprovado' AND cl.lider_id IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM clubinho_membros m
+                      WHERE m.aluno_id = cl.lider_id AND m.ano_letivo = cl.ano_letivo)
+  LOOP
+    BEGIN
+      INSERT INTO clubinho_membros (clubinho_id, aluno_id, ano_letivo)
+      VALUES (c.id, c.lider_id, c.ano_letivo);
+    EXCEPTION WHEN OTHERS THEN
+      RAISE NOTICE 'Líder do clubinho % não inscrito: %', c.id, SQLERRM;
+    END;
+  END LOOP;
+END;
+$$;
 
 -- #############################################
 -- PARTE 3 — PERFIS DOS USUÁRIOS DE TESTE

@@ -14,7 +14,7 @@ Registrado em 23/11/2026, a partir de testes no portal ligado ao Supabase.
 - [ ] **Aluno não consegue trocar de clubinho.**
   Mesmo problema da eletiva: dá "Erro ao entrar no clubinho".
 
-- [ ] **Quem cria um clubinho não entra nele.**
+- [x] **Quem cria um clubinho não entra nele.**
   A inscrição do líder como membro falha, e nenhum erro aparece. Resultado: Pedro é líder do clubinho de teste, mas continua no Clube de Leitura, e o clubinho dele mostra 10 de 10 vagas livres.
 
 ## Outros problemas

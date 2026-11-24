@@ -381,7 +381,8 @@ async function criarClubinho(liderId, nome, descricao, ano, config) {
     }
     const { data, error } = await supabaseClient.from('clubinhos').insert([{ nome, descricao, lider_id: liderId, ano_letivo: ano, status: 'pendente', validade_ate: validadeAte }]).select().single();
     if (error) throw error;
-    await supabaseClient.from('clubinho_membros').insert([{ clubinho_id: data.id, aluno_id: liderId, ano_letivo: ano }]);
+    // O líder entra no clubinho automaticamente quando a coordenação aprova
+    // (gatilho tr_inscrever_lider_clubinho no banco).
     return data;
   }
   return true;
