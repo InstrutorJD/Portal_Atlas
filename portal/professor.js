@@ -29,11 +29,12 @@ function abrirModal(tipo) {
   document.getElementById('modal-container').style.display = 'flex';
   document.getElementById('modal-body').innerHTML = '<div class="loading">Carregando...</div>';
 
-  const titulos = { 'minhas-eletivas': 'Minhas Eletivas', 'nova-eletiva': 'Propor Nova Eletiva' };
+  const titulos = { 'minhas-eletivas': 'Minhas Eletivas', 'nova-eletiva': 'Propor Nova Eletiva', relatorios: 'Relatórios' };
   document.getElementById('modal-title').textContent = titulos[tipo];
 
   if (tipo === 'minhas-eletivas') renderMinhasEletivas();
   else if (tipo === 'nova-eletiva') renderNovaEletiva();
+  else if (tipo === 'relatorios') renderRelatorio(['eletivas', 'tutoria'], 'eletivas', ANO, { professorId: PERFIL.id });
 }
 
 function fecharModal() {

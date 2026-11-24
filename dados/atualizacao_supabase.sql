@@ -6,7 +6,9 @@
 --
 -- PARTE 1 — Tabela simulado_resultados (resultados do Simulado ENEM)
 -- PARTE 2 — Validações: 1 tutor por aluno por ano, limite de vagas no banco
---           (tutoria/eletiva/clubinho), validade do clubinho, datas dos períodos
+--           (tutoria/eletiva/clubinho), validade do clubinho, datas dos períodos,
+--           troca de eletiva e visibilidade de eletivas/clubinhos pelo prazo de inscrição,
+--           leitura dos alunos pelo professor (relatórios)
 -- PARTE 3 — Perfis das contas de teste e ligação auth_id pelo e-mail
 -- No fim aparece uma tabela de conferência com o perfil de cada usuário.
 -- =============================================
@@ -234,6 +236,70 @@ CREATE POLICY "em_update_aluno" ON eletiva_matriculas
   FOR UPDATE
   USING ((get_aluno_logado()).id = aluno_id)
   WITH CHECK ((get_aluno_logado()).id = aluno_id);
+
+-- ---------- 6. Visibilidade por prazo de inscrição ----------
+-- Aluno só vê eletivas e clubinhos aprovados até a data limite de inscrição do ano
+-- (inclusive o último dia). Depois disso, só coordenação e professores veem a lista.
+-- Exceções: o aluno continua vendo a eletiva/clubinho em que está inscrito e o
+-- clubinho de que é líder (o portal mostra isso no card de status).
+CREATE OR REPLACE FUNCTION inscricao_no_prazo(p_tipo TEXT, p_ano INT)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT CASE p_tipo
+    WHEN 'eletiva' THEN EXISTS (
+      SELECT 1 FROM eletiva_config
+      WHERE ano_letivo = p_ano
+        AND data_inscricao_fim >= (now() AT TIME ZONE 'America/Sao_Paulo')::date)
+    WHEN 'clubinho' THEN EXISTS (
+      SELECT 1 FROM clubinho_config
+      WHERE ano_letivo = p_ano
+        AND data_inscricao_fim >= (now() AT TIME ZONE 'America/Sao_Paulo')::date)
+    ELSE false
+  END;
+$$;
+
+DROP POLICY IF EXISTS "eletiva_select_aprovadas" ON eletivas;
+CREATE POLICY "eletiva_select_aprovadas" ON eletivas
+  FOR SELECT USING (
+    (get_colaborador_logado()).is_coordenador = true
+    OR professor_id = (get_colaborador_logado()).id
+    OR (status = 'aprovada' AND (
+          (get_colaborador_logado()).is_professor = true
+          OR inscricao_no_prazo('eletiva', ano_letivo)
+          OR EXISTS (SELECT 1 FROM eletiva_matriculas m
+                     WHERE m.eletiva_id = eletivas.id
+                       AND m.aluno_id = (get_aluno_logado()).id)
+    ))
+  );
+
+DROP POLICY IF EXISTS "clubinho_select" ON clubinhos;
+CREATE POLICY "clubinho_select" ON clubinhos
+  FOR SELECT USING (
+    (get_colaborador_logado()).is_coordenador = true
+    OR lider_id = (get_aluno_logado()).id
+    OR (status = 'aprovado' AND (
+          (get_colaborador_logado()).is_professor = true
+          OR inscricao_no_prazo('clubinho', ano_letivo)
+          OR EXISTS (SELECT 1 FROM clubinho_membros m
+                     WHERE m.clubinho_id = clubinhos.id
+                       AND m.aluno_id = (get_aluno_logado()).id)
+    ))
+  );
+
+-- ---------- 7. Relatórios do professor ----------
+-- O professor vê os alunos inscritos nas eletivas dele e os próprios tutorados
+-- (antes só o próprio aluno e a coordenação liam a tabela alunos).
+DROP POLICY IF EXISTS "aluno_select_professor" ON alunos;
+CREATE POLICY "aluno_select_professor" ON alunos
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM eletiva_matriculas m
+            JOIN eletivas e ON e.id = m.eletiva_id
+            WHERE m.aluno_id = alunos.id
+              AND e.professor_id = (get_colaborador_logado()).id)
+    OR EXISTS (SELECT 1 FROM tutoria_vinculos v
+               WHERE v.aluno_id = alunos.id
+                 AND v.colaborador_id = (get_colaborador_logado()).id)
+  );
 
 -- #############################################
 -- PARTE 3 — PERFIS DOS USUÁRIOS DE TESTE

@@ -34,6 +34,7 @@ function abrirModal(tipo) {
     eletivas: 'Aprovar Eletivas',
     clubinhos: 'Aprovar Clubinhos',
     periodos: 'Períodos e Vagas',
+    relatorios: 'Relatórios',
   };
   document.getElementById('modal-title').textContent = titulos[tipo];
 
@@ -41,6 +42,7 @@ function abrirModal(tipo) {
   else if (tipo === 'eletivas') renderEletivas();
   else if (tipo === 'clubinhos') renderClubbinhos();
   else if (tipo === 'periodos') renderPeriodos();
+  else if (tipo === 'relatorios') renderRelatorio(['geral', 'eletivas', 'clubinhos', 'tutoria'], 'geral', ANO);
 }
 
 function fecharModal() {

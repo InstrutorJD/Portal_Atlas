@@ -23,6 +23,7 @@ async function init() {
     CONFIGS = await getConfigs(ANO);
 
     document.getElementById('user-welcome').textContent = `Olá, ${PERFIL.nome.split(' ')[0]}`;
+    aplicarPrazoDosCards();
     atualizarStatusGeral();
     await atualizarStatusCards();
   } catch (erro) {
@@ -30,6 +31,18 @@ async function init() {
     mostrarToast('Erro ao carregar. Recarregando...', 'erro');
     setTimeout(() => { window.location.href = 'index.html'; }, 2000);
   }
+}
+
+// Eletivas e clubinhos só aparecem para o aluno até a data limite de inscrição
+// (inclusive o último dia). Depois disso, só coordenação e professores veem.
+function dentroDoPrazoDeInscricao(config) {
+  if (!config?.data_inscricao_fim) return false;
+  return hojeLocalISO() <= String(config.data_inscricao_fim).slice(0, 10);
+}
+
+function aplicarPrazoDosCards() {
+  document.getElementById('card-eletivas').hidden = !dentroDoPrazoDeInscricao(CONFIGS.eletiva);
+  document.getElementById('card-clubinhos').hidden = !dentroDoPrazoDeInscricao(CONFIGS.clubinho);
 }
 
 function atualizarStatusGeral() {

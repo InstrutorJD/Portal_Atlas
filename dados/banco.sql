@@ -167,6 +167,17 @@ $$ LANGUAGE sql SECURITY DEFINER;
 -- ALUNOS: aluno vê só o próprio registro; coordenador vê todos
 CREATE POLICY "aluno_select_proprio" ON alunos
   FOR SELECT USING (auth_id = auth.uid() OR (get_colaborador_logado()).is_coordenador = true);
+-- Professor vê os alunos das próprias eletivas e os próprios tutorados (relatórios)
+CREATE POLICY "aluno_select_professor" ON alunos
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM eletiva_matriculas m
+            JOIN eletivas e ON e.id = m.eletiva_id
+            WHERE m.aluno_id = alunos.id
+              AND e.professor_id = (get_colaborador_logado()).id)
+    OR EXISTS (SELECT 1 FROM tutoria_vinculos v
+               WHERE v.aluno_id = alunos.id
+                 AND v.colaborador_id = (get_colaborador_logado()).id)
+  );
 
 -- COLABORADORES: todos autenticados podem listar tutores; só coordenador gerencia
 CREATE POLICY "colab_select_tutores" ON colaboradores
@@ -201,19 +212,61 @@ CREATE POLICY "tv_insert_aluno" ON tutoria_vinculos
 CREATE POLICY "tv_update_aluno" ON tutoria_vinculos
   FOR UPDATE USING ((get_aluno_logado()).id = aluno_id);
 
--- ELETIVAS: aprovadas visíveis a todos; pendentes só ao professor dono e coordenador
-CREATE POLICY "eletiva_select_aprovadas" ON eletivas
-  FOR SELECT USING (
-    status = 'aprovada'
-    OR (get_colaborador_logado()).is_coordenador = true
-    OR professor_id = (get_colaborador_logado()).id
-  );
 
 CREATE POLICY "eletiva_insert_professor" ON eletivas
   FOR INSERT WITH CHECK ((get_colaborador_logado()).is_professor = true AND professor_id = (get_colaborador_logado()).id);
 
 CREATE POLICY "eletiva_update_coordenador" ON eletivas
   FOR UPDATE USING ((get_colaborador_logado()).is_coordenador = true OR professor_id = (get_colaborador_logado()).id);
+
+-- ELETIVAS E CLUBINHOS: visibilidade por prazo de inscrição
+-- Aluno só vê eletivas e clubinhos aprovados até a data limite de inscrição do ano
+-- (inclusive o último dia). Depois disso, só coordenação e professores veem a lista.
+-- Exceções: o aluno continua vendo a eletiva/clubinho em que está inscrito e o
+-- clubinho de que é líder (o portal mostra isso no card de status).
+CREATE OR REPLACE FUNCTION inscricao_no_prazo(p_tipo TEXT, p_ano INT)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT CASE p_tipo
+    WHEN 'eletiva' THEN EXISTS (
+      SELECT 1 FROM eletiva_config
+      WHERE ano_letivo = p_ano
+        AND data_inscricao_fim >= (now() AT TIME ZONE 'America/Sao_Paulo')::date)
+    WHEN 'clubinho' THEN EXISTS (
+      SELECT 1 FROM clubinho_config
+      WHERE ano_letivo = p_ano
+        AND data_inscricao_fim >= (now() AT TIME ZONE 'America/Sao_Paulo')::date)
+    ELSE false
+  END;
+$$;
+
+DROP POLICY IF EXISTS "eletiva_select_aprovadas" ON eletivas;
+CREATE POLICY "eletiva_select_aprovadas" ON eletivas
+  FOR SELECT USING (
+    (get_colaborador_logado()).is_coordenador = true
+    OR professor_id = (get_colaborador_logado()).id
+    OR (status = 'aprovada' AND (
+          (get_colaborador_logado()).is_professor = true
+          OR inscricao_no_prazo('eletiva', ano_letivo)
+          OR EXISTS (SELECT 1 FROM eletiva_matriculas m
+                     WHERE m.eletiva_id = eletivas.id
+                       AND m.aluno_id = (get_aluno_logado()).id)
+    ))
+  );
+
+DROP POLICY IF EXISTS "clubinho_select" ON clubinhos;
+CREATE POLICY "clubinho_select" ON clubinhos
+  FOR SELECT USING (
+    (get_colaborador_logado()).is_coordenador = true
+    OR lider_id = (get_aluno_logado()).id
+    OR (status = 'aprovado' AND (
+          (get_colaborador_logado()).is_professor = true
+          OR inscricao_no_prazo('clubinho', ano_letivo)
+          OR EXISTS (SELECT 1 FROM clubinho_membros m
+                     WHERE m.clubinho_id = clubinhos.id
+                       AND m.aluno_id = (get_aluno_logado()).id)
+    ))
+  );
 
 -- ELETIVA MATRICULAS
 CREATE POLICY "em_select" ON eletiva_matriculas FOR SELECT USING (auth.uid() IS NOT NULL);
@@ -224,13 +277,7 @@ CREATE POLICY "em_update_aluno" ON eletiva_matriculas
 CREATE POLICY "em_delete_aluno" ON eletiva_matriculas
   FOR DELETE USING ((get_aluno_logado()).id = aluno_id);
 
--- CLUBINHOS: aprovados visíveis a todos; pendentes só ao líder e coordenador
-CREATE POLICY "clubinho_select" ON clubinhos
-  FOR SELECT USING (
-    status = 'aprovado'
-    OR (get_colaborador_logado()).is_coordenador = true
-    OR lider_id = (get_aluno_logado()).id
-  );
+-- CLUBINHOS
 
 CREATE POLICY "clubinho_insert_aluno" ON clubinhos
   FOR INSERT WITH CHECK ((get_aluno_logado()).id IS NOT NULL);
