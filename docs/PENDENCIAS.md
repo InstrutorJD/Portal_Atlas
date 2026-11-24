@@ -28,7 +28,7 @@ Registrado em 23/11/2026, a partir de testes no portal ligado ao Supabase.
 ## Da rodada anterior (ainda abertas)
 
 - [ ] Frações quebradas no simulado.
-- [ ] "TEM FOTO" aparecendo no simulado.
+- [x] "TEM FOTO" aparecendo no simulado.
 - [ ] Botão sobrepondo o texto no card do Simulado.
 - [ ] Esc não fecha os modais.
 - [x] Checkboxes desalinhados em Tutores.

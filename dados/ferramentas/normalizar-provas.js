@@ -51,9 +51,10 @@ function isMetadataLine(line) {
 // "E 13Questão 165": cabeçalho da questão seguinte colado no fim da alternativa.
 const TRAILING_HEADER = /^(.*\S)\s*(QUES+T[ÃAÂ]O\s*0*(\d{1,3})(?![\d\p{L}]).*)$/iu;
 
-const IMAGE_ONLY_LINE = /^\s*\(?\s*(?:(?:tem|cont[eé]m)\s+)?imagem+\s*\)?\s*\.?\s*$/i;
+// "imagem" ou "foto" ("TEM FOTO" na prova de 2019)
+const IMAGE_ONLY_LINE = /^\s*\(?\s*(?:(?:tem|cont[eé]m)\s+)?(?:imagem+|foto)\s*\)?\s*\.?\s*$/i;
 const IMAGE_SUFFIX = /^(.*\S)\s*\(\s*(?:tem\s+)?imagem+\s*\)\s*$/i;
-const CHOICE_IMAGE = /^\s*[A-E]\s+(?:\(?(?:tem\s+)?imagem\)?)(?:\s+[A-E]\s+\(?(?:tem\s+)?imagem\)?)?\s*$/i;
+const CHOICE_IMAGE = /^\s*[A-E]\s+(?:\(?(?:tem\s+)?(?:imagem|foto)\)?)(?:\s+[A-E]\s+\(?(?:tem\s+)?(?:imagem|foto)\)?)?\s*$/i;
 
 function parseHeaderRest(rest) {
 	const withoutChoiceImage = rest.replace(/\(?\s*(?:tem\s+)?imagem\s+n[ao]s?\s+(?:alternativas|respostas)\s*\)?/gi, "");
@@ -163,7 +164,7 @@ function normalizeFile(text, year, report) {
 		block.lines.forEach((line) => {
 			if (CHOICE_IMAGE.test(line)) {
 				block.imageInChoices = true;
-				output.push(line.replace(/\(?(?:tem\s+)?imagem\)?/gi, "(imagem)"));
+				output.push(line.replace(/\(?(?:tem\s+)?(?:imagem|foto)\)?/gi, "(imagem)"));
 				return;
 			}
 			if (IMAGE_ONLY_LINE.test(line)) {
