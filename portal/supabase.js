@@ -71,7 +71,23 @@ const _DB = {
 };
 
 // =============== AUTENTICAÇÃO CORRIGIDA ===============
+// Aceita o e-mail completo ou só o início dele (ex.: "ana.quevedo1")
+async function resolverEmailLogin(login) {
+  const valor = String(login || '').trim().toLowerCase();
+  if (valor.includes('@')) return valor;
+
+  if (SUPABASE_ENABLED) {
+    const { data, error } = await supabaseClient.rpc('email_por_login', { p_login: valor });
+    if (error) console.warn('⚠️ Erro ao buscar login:', error.message);
+    if (!data) throw new Error('Login não encontrado. Use o início do seu e-mail (antes do @).');
+    return data;
+  }
+  const usuario = _DB.usuarios.find(u => u.email.toLowerCase().split('@')[0] === valor);
+  return usuario ? usuario.email : valor;
+}
+
 async function login(email, senha) {
+  email = await resolverEmailLogin(email);
   if (SUPABASE_ENABLED) {
     try {
       const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
