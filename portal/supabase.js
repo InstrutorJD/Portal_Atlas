@@ -322,9 +322,14 @@ async function contarMatriculasPorEletiva(eletivaId) {
 
 async function matricularEletiva(alunoId, eletivaId, ano) {
   if (SUPABASE_ENABLED) {
-    const { data, error } = await supabaseClient.from('eletiva_matriculas').insert([{ aluno_id: alunoId, eletiva_id: eletivaId, ano_letivo: ano }]);
+    // 1 eletiva por aluno por ano: troca a inscrição se já existir
+    const { data: existente } = await supabaseClient.from('eletiva_matriculas').select('eletiva_id').eq('aluno_id', alunoId).eq('ano_letivo', ano).maybeSingle();
+    if (existente?.eletiva_id === eletivaId) return true;
+    const { error } = existente
+      ? await supabaseClient.from('eletiva_matriculas').update({ eletiva_id: eletivaId, matriculado_em: new Date().toISOString() }).eq('aluno_id', alunoId).eq('ano_letivo', ano)
+      : await supabaseClient.from('eletiva_matriculas').insert([{ aluno_id: alunoId, eletiva_id: eletivaId, ano_letivo: ano }]);
     if (error) throw error;
-    return data;
+    return true;
   }
   return true;
 }
@@ -397,6 +402,15 @@ async function getTodosColaboradores() {
     return data || [];
   }
   return [];
+}
+
+async function atualizarColaborador(id, campos) {
+  if (SUPABASE_ENABLED) {
+    const { data, error } = await supabaseClient.from('colaboradores').update(campos).eq('id', id).select('id');
+    if (error) throw error;
+    if (!data || data.length === 0) throw new Error('Sem permissão para alterar este colaborador.');
+  }
+  return true;
 }
 
 async function criarColaborador(nome, cargo, email, isTutor, isProfessor, isCoordenador) {
@@ -582,6 +596,7 @@ window.criarClubinho = criarClubinho;
 window.entrarClubinho = entrarClubinho;
 window.getTodosColaboradores = getTodosColaboradores;
 window.criarColaborador = criarColaborador;
+window.atualizarColaborador = atualizarColaborador;
 window.atualizarStatusEletiva = atualizarStatusEletiva;
 window.atualizarStatusClubinho = atualizarStatusClubinho;
 window.submitEletiva = submitEletiva;

@@ -103,10 +103,10 @@ function renderNovaEletiva() {
   body.innerHTML = `
     <div class="field"><label>Título da eletiva</label><input type="text" id="elet-titulo" placeholder="Ex: Robótica Aplicada"></div>
     <div class="field"><label>Descrição</label><textarea id="elet-desc" rows="4" placeholder="Descreva a eletiva..."></textarea></div>
-    <button class="btn btn-primary" onclick="submitEletiva()">Enviar para aprovação</button>`;
+    <button class="btn btn-primary" onclick="enviarEletiva()">Enviar para aprovação</button>`;
 }
 
-async function submitEletiva() {
+async function enviarEletiva() {
   const titulo = document.getElementById('elet-titulo').value.trim();
   const desc = document.getElementById('elet-desc').value.trim();
 

@@ -227,6 +227,14 @@ CREATE TRIGGER tr_validar_entrada_clubinho
   BEFORE INSERT OR UPDATE OF clubinho_id ON clubinho_membros
   FOR EACH ROW EXECUTE FUNCTION validar_entrada_clubinho();
 
+-- ---------- 5. Troca de eletiva ----------
+-- O aluno pode trocar a própria inscrição (antes só podia criar e apagar).
+DROP POLICY IF EXISTS "em_update_aluno" ON eletiva_matriculas;
+CREATE POLICY "em_update_aluno" ON eletiva_matriculas
+  FOR UPDATE
+  USING ((get_aluno_logado()).id = aluno_id)
+  WITH CHECK ((get_aluno_logado()).id = aluno_id);
+
 -- #############################################
 -- PARTE 3 — PERFIS DOS USUÁRIOS DE TESTE
 -- Contas usadas pelos botões "Entrar direto": aluno@atlas.com, professor@atlas.com,

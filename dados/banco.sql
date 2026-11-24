@@ -219,6 +219,8 @@ CREATE POLICY "eletiva_update_coordenador" ON eletivas
 CREATE POLICY "em_select" ON eletiva_matriculas FOR SELECT USING (auth.uid() IS NOT NULL);
 CREATE POLICY "em_insert_aluno" ON eletiva_matriculas
   FOR INSERT WITH CHECK ((get_aluno_logado()).id = aluno_id);
+CREATE POLICY "em_update_aluno" ON eletiva_matriculas
+  FOR UPDATE USING ((get_aluno_logado()).id = aluno_id) WITH CHECK ((get_aluno_logado()).id = aluno_id);
 CREATE POLICY "em_delete_aluno" ON eletiva_matriculas
   FOR DELETE USING ((get_aluno_logado()).id = aluno_id);
 

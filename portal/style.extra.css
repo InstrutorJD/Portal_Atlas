@@ -44,7 +44,12 @@ body, input, button, select, textarea { font-size: 16px; line-height: 1.45; }
 
 /* Form layout helpers */
 .field-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; }
-.field--check { display:flex; gap:12px; align-items:center; }
+.field--check { display:flex; flex-wrap:wrap; gap:8px 20px; align-items:center; }
+.field--check label { display:inline-flex; align-items:center; gap:8px; margin:0; font-weight:500; cursor:pointer; }
+.field--check input[type="checkbox"] { width:18px; height:18px; padding:0; margin:0; flex:none; }
+.item-card__acoes { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.tag { display:inline-block; padding:2px 8px; border-radius:999px; background:#eef2ff; color:#3730a3; font-size:0.8rem; font-weight:600; margin-right:4px; }
+.tag--off { background:#f3f4f6; color:#6b7280; }
 
 .vazio { color: #6b7280; }
 .secao-titulo { margin-top: 8px; margin-bottom: 12px; }

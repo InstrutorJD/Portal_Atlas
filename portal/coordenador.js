@@ -58,8 +58,9 @@ document.getElementById('modal-container').addEventListener('click', e => {
 async function renderTutores() {
   const body = document.getElementById('modal-body');
   try {
-    const colaboradores = await getTodosColaboradores();
-    const tutores = colaboradores.filter(c => c.is_tutor);
+    const colaboradores = (await getTodosColaboradores())
+      .filter(c => !c.is_coordenador)
+      .sort((a, b) => (b.is_tutor - a.is_tutor) || a.nome.localeCompare(b.nome));
 
     body.innerHTML = `
       <div class="secao-criar">
@@ -74,13 +75,22 @@ async function renderTutores() {
         <button class="btn btn-primary" onclick="salvarColaborador()">Adicionar</button>
       </div>
       <hr class="divider">
-      <h3 style="margin-bottom:16px">Tutores cadastrados</h3>
+      <h3 style="margin-bottom:16px">Colaboradores cadastrados</h3>
       <div class="lista-itens">
-        ${tutores.length === 0 ? '<p class="vazio">Nenhum tutor cadastrado.</p>' :
-          tutores.map(t => `
+        ${colaboradores.length === 0 ? '<p class="vazio">Nenhum colaborador cadastrado.</p>' :
+          colaboradores.map(c => `
             <div class="item-card">
-              <h3>${t.nome}</h3>
-              <p class="vagas-info">${t.cargo} ${t.email ? `· ${t.email}` : '· sem acesso ao portal'}</p>
+              <h3>${c.nome}</h3>
+              <p>
+                <span class="tag ${c.is_tutor ? '' : 'tag--off'}">${c.is_tutor ? 'Tutor' : 'Não é tutor'}</span>
+                ${c.is_professor ? '<span class="tag">Professor</span>' : ''}
+              </p>
+              <p class="vagas-info">${c.cargo} ${c.email ? `· ${c.email}` : '· sem acesso ao portal'}</p>
+              <div class="item-card__acoes">
+                <button class="btn btn-outline btn--sm" onclick="alternarTutor('${c.id}', ${!c.is_tutor})">
+                  ${c.is_tutor ? 'Remover de tutor' : 'Tornar tutor'}
+                </button>
+              </div>
             </div>`).join('')}
       </div>`;
   } catch {
@@ -99,10 +109,22 @@ async function salvarColaborador() {
 
   try {
     await criarColaborador(nome, cargo, email || null, isTutor, isProfessor, false);
-    mostrarToast('Colaborador adicionado!');
+    mostrarToast(isTutor ? 'Tutor adicionado!' : 'Colaborador adicionado (não marcado como tutor).');
     renderTutores();
   } catch (e) {
-    mostrarToast(e.message?.includes('unique') ? 'E-mail já cadastrado.' : 'Erro ao salvar.', 'erro');
+    console.error('Erro ao salvar colaborador:', e);
+    mostrarToast(/unique|duplicate/i.test(e.message || '') ? 'E-mail já cadastrado.' : 'Erro ao salvar.', 'erro');
+  }
+}
+
+async function alternarTutor(id, tornarTutor) {
+  try {
+    await atualizarColaborador(id, { is_tutor: tornarTutor });
+    mostrarToast(tornarTutor ? 'Agora é tutor.' : 'Removido dos tutores.');
+    renderTutores();
+  } catch (e) {
+    console.error('Erro ao atualizar colaborador:', e);
+    mostrarToast('Erro ao atualizar.', 'erro');
   }
 }
 

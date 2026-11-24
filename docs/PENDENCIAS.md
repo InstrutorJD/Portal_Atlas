@@ -4,11 +4,11 @@ Registrado em 23/11/2026, a partir de testes no portal ligado ao Supabase.
 
 ## Principais
 
-- [ ] **Professor não consegue propor eletiva, e a tela diz que conseguiu.**
+- [x] **Professor não consegue propor eletiva, e a tela diz que conseguiu.**
   A função `submitEletiva` em `portal/professor.js` (linha 109) tem o mesmo nome da função que grava no banco (`portal/supabase.js`). Ela chama a si mesma sem parar e dá erro. Mesmo assim aparece a mensagem verde "Eletiva enviada para aprovação!", e nada vai para o banco. Por isso também não deu para testar a aprovação de eletiva pelo coordenador.
   *Correção:* renomear a função do `professor.js`, por exemplo para `enviarEletiva`.
 
-- [ ] **Aluno não consegue trocar de eletiva.**
+- [x] **Aluno não consegue trocar de eletiva.**
   Dá "Erro ao se inscrever". O sistema sempre tenta criar uma inscrição nova, mas o banco só aceita uma eletiva por aluno por ano. A tela diz "Você pode alterar enquanto o período estiver aberto", o que é falso. A tutoria faz certo: atualiza o registro quando ele já existe.
 
 - [ ] **Aluno não consegue trocar de clubinho.**
@@ -31,4 +31,4 @@ Registrado em 23/11/2026, a partir de testes no portal ligado ao Supabase.
 - [ ] "TEM FOTO" aparecendo no simulado.
 - [ ] Botão sobrepondo o texto no card do Simulado.
 - [ ] Esc não fecha os modais.
-- [ ] Checkboxes desalinhados em Tutores.
+- [x] Checkboxes desalinhados em Tutores.

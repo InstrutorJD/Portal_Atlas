@@ -225,7 +225,8 @@ async function confirmarEletiva(eletivaId, titulo) {
     fecharModal();
     await atualizarStatusCards();
   } catch (e) {
-    mostrarToast('Erro ao se inscrever. Tente novamente.', 'erro');
+    console.error('Erro ao se inscrever na eletiva:', e);
+    mostrarToast(/lotada/i.test(e?.message || '') ? 'Esta eletiva não tem mais vagas.' : 'Erro ao se inscrever. Tente novamente.', 'erro');
   }
 }
 
